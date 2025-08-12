@@ -28,7 +28,7 @@ include "../includes/sidebar.php";
 }
 
 .reg-box {
-  background: #12151e;
+  background: #191d24;
   backdrop-filter: blur(12px);
   padding: 40px 30px;
   border-radius: 14px;

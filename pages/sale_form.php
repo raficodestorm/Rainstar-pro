@@ -30,7 +30,7 @@ include "../includes/sidebar.php";
     }
 
     .form-container {
-      background: #12151e;
+      background: #191d24;
       backdrop-filter: blur(12px);
       border-radius: 14px;
       padding: 30px 40px;
@@ -155,7 +155,7 @@ include "../includes/sidebar.php";
 </head>
 <body>
   <div class="form-container">
-    <h2>Pharmacy Sales Form</h2>
+    <h2> Quick Sales Entry</h2>
     <form id="salesForm">
       <div class="form-group">
         <label for="customer">Select Customer</label>
@@ -166,13 +166,6 @@ include "../includes/sidebar.php";
         </select>
       </div>
 
-      <div class="form-group">
-        <label for="pharmacist">Pharmacist</label>
-        <select name="pharmacist_id" required>
-          <option value="1">Admin</option>
-          <option value="2">Pharmacist</option>
-        </select>
-      </div>
 
       <div class="section-title">Medicines</div>
 

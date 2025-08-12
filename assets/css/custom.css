@@ -1,0 +1,53 @@
+
+/*---------- footer part--------------------  */
+.smart-footer {
+    /* background: #12151e; */
+    background-color: #191d24;
+    color: #cfcfcf;
+    padding: 20px 0;
+    text-align: center;
+    font-size: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.footer-container {
+    /* max-width: 1200px; */
+    margin: auto;
+    padding: 0 15px;
+}
+
+.smart-footer p {
+    margin: 0;
+}
+
+.footer-social {
+    margin-top: 8px;
+}
+
+.footer-social a {
+    color: #cfcfcf;
+    margin: 0 8px;
+    font-size: 18px;
+    transition: color 0.3s ease;
+}
+
+.footer-social a:hover {
+    color: #00bcd4; 
+}
+
+
+
+
+/* ------------------------sidebar style---------------------- */
+.sidebar-offcanvas {
+    position: fixed !important;
+    /* top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important; */
+    height: 100vh !important;
+    /* overflow-y: auto !important; */
+    transform: none !important; /* Prevent JS slide effect */
+    margin: auto;
+}
+
+

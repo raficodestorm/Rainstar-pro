@@ -1,14 +1,19 @@
  <!-- partial:partials/_footer.html -->
-          <footer class="footer">
-            <div class="d-sm-flex justify-content-center justify-content-sm-between">
-              <span class="text-muted d-block text-center text-sm-left d-sm-inline-block">Copyright © bootstrapdash.com 2020<br>
+ <footer class="smart-footer">
+    <div class="footer-container">
+        
+        <!-- Footer Text -->
+        <p>&copy; <?php echo date('Y'); ?> <strong>Rainstar</strong> — All Rights Reserved.</p>
 
-                Distributed By <a href="https://therichpost.com"target="_blank">Therichpost</a>
+        <!-- Social Icons -->
+        <div class="footer-social">
+            <a href="#"><i class="mdi mdi-facebook"></i></a>
+            <a href="#"><i class="mdi mdi-twitter"></i></a>
+            <a href="#"><i class="mdi mdi-linkedin"></i></a>
+        </div>
 
-              </span>
-              <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center"> Free <a href="https://therichpost.com" target="_blank">Bootstrap admin templates</a> from therichpost.com</span>
-            </div>
-          </footer>
+    </div>
+</footer>
           <!-- partial -->
         </div>
         <!-- main-panel ends -->

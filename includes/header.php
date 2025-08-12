@@ -17,7 +17,9 @@
     <!-- inject:css -->
     <!-- endinject -->
     <!-- Layout styles -->
+     
     <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/custom.css">
     <!-- Material Design Icons (CDN) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@5.4.55/css/materialdesignicons.min.css">
     <!-- End layout styles -->

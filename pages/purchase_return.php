@@ -31,7 +31,7 @@ include "../includes/sidebar.php";
     }
 
     .form-container {
-      background: #12151e;
+      background: #191d24;
       backdrop-filter: blur(12px);
       border-radius: 14px;
       padding: 30px 40px;
@@ -259,6 +259,8 @@ include "../includes/sidebar.php";
   </script>
 </body>
 </html>
+
+
 
 <!-- contant area end----------------------------------------------------------------------------->
     </div> <!-- content-wrapper ends -->

@@ -15,7 +15,7 @@ include "../includes/sidebar.php";
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Sales Return Form</title>
+  <title>Sales Return Entry</title>
   <style>
     /* Reuse the same dark theme styles from your sales form */
     * {
@@ -32,7 +32,7 @@ include "../includes/sidebar.php";
     }
 
     .form-container {
-      background: #12151e;
+      background: #191d24;
       backdrop-filter: blur(12px);
       border-radius: 14px;
       padding: 30px 40px;
@@ -154,7 +154,7 @@ include "../includes/sidebar.php";
 </head>
 <body>
   <div class="form-container">
-    <h2>Sales Return Form</h2>
+    <h2>Sales Return Entry</h2>
     <form id="salesReturnForm">
       <div class="form-group">
         <label for="invoice">Invoice Number</label>
