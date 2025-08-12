@@ -21,6 +21,18 @@
       <!-- page-body-wrapper ends -->
     </div>
     <!-- container-scroller -->
+
+    <!-- Try jquey CDN first -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <!-- Fallback to local if CDN fails -->
+    <script>
+        if (typeof jQuery == 'undefined') {
+            document.write('<script src="js/jquery-3.7.1.min.map"><\/script>');
+        }
+    </script>
+
+
+    <script src="js/custom.js"></script>
     <!-- plugins:js -->
     <script src="../assets/js/vendor.bundle.base.js"></script>
     <!-- endinject -->

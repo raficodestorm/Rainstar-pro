@@ -35,19 +35,54 @@
     color: #00bcd4; 
 }
 
-
-
-
-/* ------------------------sidebar style---------------------- */
-.sidebar-offcanvas {
-    position: fixed !important;
-    /* top: 0 !important;
-    left: 0 !important;
-    bottom: 0 !important; */
-    height: 100vh !important;
-    /* overflow-y: auto !important; */
-    transform: none !important; /* Prevent JS slide effect */
-    margin: auto;
+/* ------------------------navebar style---------------------- */
+#searchp{
+    width: 150px !important;
+}
+#navsr{
+     width: 150px !important;
 }
 
 
+/* ------------------------sidebar style---------------------- */
+
+.nav-item{
+    position: relative;
+}
+.nav-item ul{
+    position: absolute;
+    visibility: hidden;
+    left: 60px;
+    right: 0;
+    padding: 0;
+    width: 183px;
+    z-index: 9999;
+    background-color: #14181f;
+    border-radius: 7px;
+}
+.nav-item ul li{
+    list-style: none;
+}
+.nav-item ul li:hover{
+    background-color: black;
+    border-bottom-right-radius: 23px;
+    border-top-right-radius: 23px;
+    border-left: 3px solid #ff5400;
+    
+}
+.nav-item ul li:hover a{
+    color: #ff5400;
+    font-weight: bold;
+}
+.nav-item ul li a{
+    text-decoration: none;
+    display: block;
+    padding: 12px 0px 12px 8px;
+    color: white;
+}
+.nav-item ul li a .sub-text{
+    padding: 15px 0px;
+}
+#menuadd:hover #menuadd-sub{
+    visibility: visible;
+}

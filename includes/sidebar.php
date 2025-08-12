@@ -20,18 +20,34 @@
             </a>
           </li>
 
-          <li class="nav-item menu-items">
+          <li class="nav-item menu-items" id="menuadd">
             <a class="nav-link" href="registration_form.php">
               <span class="menu-icon">
                 <i class="mdi mdi-speedometer"></i>
               </span>
-              <span class="menu-title">Add User</span>
+              <span class="menu-title">Add</span>
             </a>
-            <ul>
-              <li><a href="registration_form.php">Add User</a></li>
-              <li><a href="add_customer.php">Add Customer</a></li>
+              <ul id="menuadd-sub">
+                <li>
+                  <a class="" href="registration_form.php">
+                    <span class="">
+                      <i class="mdi mdi-speedometer"></i>
+                    </span>
+                    <span class="sub-text">Add User</span>
+                  </a>
+              </li>
+
+              <li>
+                  <a class="" href="add_customer.php">
+                    <span class="">
+                      <i class="mdi mdi-speedometer"></i>
+                    </span>
+                    <span class="sub-text">Add Customer</span>
+                  </a>
+              </li>
             </ul>
           </li>
+
 
           <li class="nav-item menu-items">
             <a class="nav-link" href="sale_form.php">
