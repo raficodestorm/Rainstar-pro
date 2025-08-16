@@ -31,7 +31,7 @@ include "../includes/sidebar.php";
     
     }
 
-    .form-container {
+    .sreturn-form-container {
       background: #191d24;
       backdrop-filter: blur(12px);
       border-radius: 14px;
@@ -48,7 +48,7 @@ include "../includes/sidebar.php";
       color: #ffffff;
     }
 
-    .form-group {
+    .sreturn-form-group {
       display: flex;
       flex-direction: column;
       margin-bottom: 20px;
@@ -77,7 +77,7 @@ include "../includes/sidebar.php";
       background-color: rgba(50, 50, 50, 0.95);
     }
 
-    .grid-row {
+    .sreturn-grid-row {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) 50px;
       gap: 20px;
@@ -89,7 +89,7 @@ include "../includes/sidebar.php";
   margin-top: 10px;
   padding: 10px 18px;
   border: none;
-  background: linear-gradient(135deg, #4dabf7, #339af0);
+  background: linear-gradient(135deg, #27ae60, #1e8449);
   color: white;
   border-radius: 8px;
   cursor: pointer;
@@ -98,7 +98,7 @@ include "../includes/sidebar.php";
 }
 
 .add-btn:hover {
-  background: linear-gradient(135deg, #74c0fc, #4dabf7);
+  background: linear-gradient(135deg, #2ecc71, #239b56);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(77, 171, 247, 0.4);
 }
@@ -121,7 +121,7 @@ include "../includes/sidebar.php";
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(77, 171, 247, 0.4);
 }
-    .section-title {
+    .sreturn-section-title {
       margin: 20px 0 10px;
       font-size: 18px;
       color: #bbbbbb;
@@ -146,22 +146,22 @@ include "../includes/sidebar.php";
     }
 
     @media (max-width: 600px) {
-      .grid-row {
+      .sreturn-grid-row {
         grid-template-columns: 1fr;
       }
     }
   </style>
 </head>
 <body>
-  <div class="form-container">
+  <div class="sreturn-form-container">
     <h2>Sales Return Entry</h2>
     <form id="salesReturnForm">
-      <div class="form-group">
+      <div class="sreturn-form-group">
         <label for="invoice">Invoice Number</label>
         <input type="text" name="invoice_number" required placeholder="Enter invoice number">
       </div>
 
-      <div class="form-group">
+      <div class="sreturn-form-group">
         <label for="customer">Select Customer</label>
         <select name="customer_id" required>
           <option value="" disabled selected hidden>Select a customer</option>
@@ -170,18 +170,18 @@ include "../includes/sidebar.php";
         </select>
       </div>
 
-      <div class="form-group">
+      <div class="sreturn-form-group">
         <label for="reason">Reason for Return</label>
         <textarea name="reason" rows="3" placeholder="Describe the reason for return" required></textarea>
       </div>
 
-      <div class="section-title">Return Items</div>
+      <div class="sreturn-section-title">Return Items</div>
 
       <div id="return-items-container"></div>
 
       <button type="button" class="add-btn" onclick="addReturnRow()">+ Add Item</button>
 
-      <div class="form-group" style="margin-top: 30px;">
+      <div class="sreturn-form-group" style="margin-top: 30px;">
         <label for="total-refund">Total Refund Amount</label>
         <input type="number" id="total-refund" name="total_refund" readonly value="0.00">
       </div>
@@ -191,13 +191,15 @@ include "../includes/sidebar.php";
   </div>
 
   <script>
+
+
     function addReturnRow() {
       const container = document.getElementById('return-items-container');
 
       const row = document.createElement('div');
-      row.className = 'grid-row';
+      row.className = 'sreturn-grid-row';
       row.innerHTML = `
-        <div class="form-group">
+        <div class="sreturn-form-group">
           <label>Medicine</label>
           <select name="stock_id[]" required onchange="calculateRefund(this)">
             <option value="1" data-price="10">NAPA</option>
@@ -205,22 +207,22 @@ include "../includes/sidebar.php";
           </select>
         </div>
 
-        <div class="form-group">
+        <div class="sreturn-form-group">
           <label>Quantity</label>
           <input type="number" name="quantity[]" min="1" value="1" oninput="calculateRefund(this)">
         </div>
 
-        <div class="form-group">
+        <div class="sreturn-form-group">
           <label>Unit Price</label>
           <input type="number" name="unit_price[]" step="0.01" value="10.00" readonly>
         </div>
 
-        <div class="form-group">
+        <div class="sreturn-form-group">
           <label>Total</label>
           <input type="number" name="total[]" step="0.01" value="10.00" readonly>
         </div>
 
-        <div class="form-group">
+        <div class="sreturn-form-group">
           <label>&nbsp;</label>
           <button type="button" class="delete-btn" onclick="removeRow(this)">❌</button>
         </div>
@@ -231,7 +233,7 @@ include "../includes/sidebar.php";
     }
 
     function calculateRefund(elem) {
-      const row = elem.closest('.grid-row');
+      const row = elem.closest('.sreturn-grid-row');
       const qty = row.querySelector('[name="quantity[]"]').value;
       const select = row.querySelector('[name="stock_id[]"]');
       const price = select.options[select.selectedIndex].dataset.price;
@@ -251,7 +253,7 @@ include "../includes/sidebar.php";
     }
 
     function removeRow(button) {
-      button.closest('.grid-row').remove();
+      button.closest('.sreturn-grid-row').remove();
       updateRefundTotal();
     }
 

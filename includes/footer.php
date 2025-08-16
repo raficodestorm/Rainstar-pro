@@ -27,7 +27,7 @@
     <!-- Fallback to local if CDN fails -->
     <script>
         if (typeof jQuery == 'undefined') {
-            document.write('<script src="js/jquery-3.7.1.min.map"><\/script>');
+            document.write('<script src="../assets/js/jquery-3.7.1.min.map"><\/script>');
         }
     </script>
 

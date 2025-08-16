@@ -17,6 +17,7 @@
     justify-content: center;
     align-items: center;
     height: 100vh;
+    flex-direction: column;
   }
 
   .login-box {
@@ -182,9 +183,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             // Redirect based on role
             if ($dbRole == 'pharmacist') {
-                header("Location: pharmacist_dashboard.php");
+                header("Location: pages/pharmacist_dashboard.php");
             } elseif ($dbRole == 'admin') {
-                header("Location: pharmacist_dashboard.php");
+                header("Location: pages/pharmacist_dashboard.php");
             }
             exit;
         } else {

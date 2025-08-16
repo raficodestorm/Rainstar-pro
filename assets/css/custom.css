@@ -57,9 +57,10 @@
     padding: 0;
     width: 183px;
     z-index: 9999;
-    /* background-color: #14181f; */
-    background-color: #ff5400;
+    background-color: #14181f;
+    /* background-color: #ff5400; */
     border-radius: 7px;
+     transform: translateY(10px); /*small downward offset */
     transition: all 0.4s ease;
 }
 .nav-item ul li{
@@ -87,4 +88,6 @@
 }
 #menuadd:hover #menuadd-sub{
     visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
 }

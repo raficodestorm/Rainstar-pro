@@ -1,4 +1,5 @@
 <?php
+session_start();
 // blank-page.php
 // Keeps header, sidebar, navbar and footer. Content area is intentionally empty.
 include "../includes/header.php";
@@ -10,19 +11,152 @@ include "../includes/sidebar.php";
   <div class="main-panel">
     <div class="content-wrapper">
 <!-- contant area start----------------------------------------------------------------------------->
-   
+   <?php
+include "../includes/dbconnection.php";
+
+$_SESSION['pharmacist_id'] = 1; 
+$_SESSION['pharmacist_name'] = "John Doe";
+// Fetch medicines
+$medicinesData = [];
+$medicines = $conn->query("SELECT id AS stock_id, medicine_name, sale_price, quantity FROM stock");
+while ($row = $medicines->fetch_assoc()) {
+    $medicinesData[] = $row;
+}
+
+$supplier = $conn->query("SELECT id, name FROM supplier");
+$typeData = [];
+$medicineType = $conn->query("SELECT id, type_name FROM medicine_type");
+while ($rows = $medicineType->fetch_assoc()) {
+  $typeData[] = $rows;
+}
+
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Start transaction
+    $conn->begin_transaction();
+    try {
+        // Sanitize input
+        $invoice_number = trim($_POST['invoice_number']);
+        $supplier_name = trim($_POST['supplier_name']);
+        $total_amount = floatval($_POST['total_amount']);
+        $pharmacist_id = $_SESSION['pharmacist_id'];
+        $pharmacist_name = $_SESSION['pharmacist_name'];
+        $purchase_date = date("Y-m-d H:i:s");
+
+        // Get supplier_id (or insert if not exists)
+        $supplier_stmt = $conn->prepare("SELECT id FROM supplier WHERE name = ?");
+        $supplier_stmt->bind_param("s", $supplier_name);
+        $supplier_stmt->execute();
+        $supplier_stmt->bind_result($supplier_id);
+        if ($supplier_stmt->fetch()) {
+            // Found supplier
+        } else {
+            $supplier_stmt->close();
+            $insert_supplier = $conn->prepare("INSERT INTO supplier (name) VALUES (?)");
+            $insert_supplier->bind_param("s", $supplier_name);
+            $insert_supplier->execute();
+            $supplier_id = $insert_supplier->insert_id;
+            $insert_supplier->close();
+        }
+        
+
+        // Insert purchase record
+        $purchase_stmt = $conn->prepare("
+            INSERT INTO purchases (invoice_number, supplier_id, supplier_name, total_amount, pharmacist_name, purchase_date) 
+            VALUES (?, ?, ?, ?, ?, ?)
+        ");
+        $purchase_stmt->bind_param("sisdss", $invoice_number, $supplier_id, $supplier_name, $total_amount, $pharmacist_name, $purchase_date);
+        $purchase_stmt->execute();
+        $purchase_id = $purchase_stmt->insert_id;
+        $purchase_stmt->close();
+
+        // Loop through items
+        foreach ($_POST['medicine_name'] as $i => $medicine_name) {
+            $type_name = $_POST['type_name'][$i];
+            $expiry_date = $_POST['expiry_date'][$i];
+            $quantity = intval($_POST['quantity'][$i]);
+            $unit_price = floatval($_POST['unit_price'][$i]);
+            $sale_price = floatval($_POST['sale_price'][$i]);
+
+            // 1. Handle medicine type
+            $type_stmt = $conn->prepare("SELECT id FROM medicine_type WHERE type_name = ?");
+            $type_stmt->bind_param("s", $type_name);
+            $type_stmt->execute();
+            $type_stmt->bind_result($medicine_type_id);
+            if ($type_stmt->fetch()) {
+                // type exists
+            } else {
+                $type_stmt->close();
+                $insert_type = $conn->prepare("INSERT INTO medicine_type (type_name) VALUES (?)");
+                $insert_type->bind_param("s", $type_name);
+                $insert_type->execute();
+                $medicine_type_id = $insert_type->insert_id;
+                $insert_type->close();
+                $type_stmt = null;
+            }
+            if ($type_stmt) $type_stmt->close();
+
+            // 2. Handle stock (check if medicine exists)
+            $stock_stmt = $conn->prepare("SELECT id, quantity FROM stock WHERE medicine_name = ?");
+            $stock_stmt->bind_param("s", $medicine_name);
+            $stock_stmt->execute();
+            $stock_stmt->bind_result($stock_id, $current_qty);
+            if ($stock_stmt->fetch()) {
+                // Medicine exists → update stock
+                $new_qty = $current_qty + $quantity;
+                $stock_stmt->close();
+                $update_stock = $conn->prepare("
+                    UPDATE stock SET quantity = ?, purchase_price = ?, sale_price = ?, expiry_date = ?, supplier_id = ?, medicine_type_id = ?
+                    WHERE id = ?
+                ");
+                $update_stock->bind_param("iddsiii", $new_qty, $unit_price, $sale_price, $expiry_date, $supplier_id, $medicine_type_id, $stock_id);
+                $update_stock->execute();
+                $update_stock->close();
+            } else {
+                // Medicine not found → insert new
+                $stock_stmt->close();
+                $insert_stock = $conn->prepare("
+                    INSERT INTO stock (medicine_name, medicine_type_id, quantity, purchase_price, sale_price, expiry_date, supplier_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ");
+                $insert_stock->bind_param("siiddsi", $medicine_name, $medicine_type_id, $quantity, $unit_price, $sale_price, $expiry_date, $supplier_id);
+                $insert_stock->execute();
+                $stock_id = $insert_stock->insert_id;
+                $insert_stock->close();
+            }
+
+            // 3. Insert into purchase_items
+            $item_stmt = $conn->prepare("
+                INSERT INTO purchase_items (purchase_id, stock_id, quantity, unit_price) 
+                VALUES (?, ?, ?, ?)
+            ");
+            $item_stmt->bind_param("iiid", $purchase_id, $stock_id, $quantity, $unit_price);
+            $item_stmt->execute();
+            $item_stmt->close();
+        }
+
+        // Commit transaction
+        $conn->commit();
+        echo "<script>alert('Purchase successfully saved!'); window.location.href='purchase_form.php';</script>";
+
+    } catch (Exception $e) {
+        $conn->rollback();
+        die("Error: " . $e->getMessage());
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Purchase Form</title>
   <style>
-    
+        
     .form-container {
       background: #1a1f2e;
       border-radius: 14px;
-      padding: 30px 40px;
-      max-width: 900px;
+      padding: 30px 20px;
+      max-width: 1000px;
       width: 100%;
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
       border: 1px solid rgba(255, 255, 255, 0.05);
@@ -78,12 +212,16 @@ include "../includes/sidebar.php";
     /* Header for return items */
     #purchase-items-header {
       display: grid;
-      grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr 50px;
+      grid-template-columns: 1.5fr 1.5fr 1.8fr 1fr 1fr 1fr 1fr 50px;
       gap: 20px;
-      margin-bottom: 5px;
+      margin-bottom: 8px;
       font-weight: 600;
       color: #ccc;
       user-select: none;
+      align-items: center;
+    }
+    #purchase-items-header div{
+      text-align: center;
     }
 
     /* Container for all return item rows */
@@ -97,8 +235,8 @@ include "../includes/sidebar.php";
     /* Each return item row is a grid with 6 columns */
     .purchase-item-row {
       display: grid;
-      grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr 50px;
-      gap: 20px;
+      grid-template-columns: 1.5fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr 50px;
+      gap: 15px;
       align-items: center;
     }
 
@@ -107,7 +245,7 @@ include "../includes/sidebar.php";
       margin-bottom: 0;
     }
 
-    .add-btn {
+    .add-medicine-btn {
       margin: 10px 0 30px;
       padding: 10px 18px;
       border: none;
@@ -120,7 +258,7 @@ include "../includes/sidebar.php";
       display: inline-block;
     }
 
-    .add-btn:hover {
+    .add-medicine-btn:hover {
       background: linear-gradient(135deg, #74c0fc, #4dabf7);
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(77, 171, 247, 0.4);
@@ -209,7 +347,7 @@ include "../includes/sidebar.php";
 <body>
   <div class="form-container">
     <h2>Purchase Entry</h2>
-    <form id="purchaseReturnForm">
+    <form id="purchaseForm" method="POST" action="<?= htmlspecialchars($_SERVER['PHP_SELF']); ?>">
       <div class="form-group">
         <label for="invoice">Purchase Invoice Number</label>
         <input type="text" name="invoice_number" id="invoice" required placeholder="Enter purchase invoice number" />
@@ -217,20 +355,23 @@ include "../includes/sidebar.php";
 
       <div class="form-group">
         <label for="supplier">Select Supplier</label>
-        <select name="supplier_id" id="supplier" required>
-          <option value="" disabled selected hidden>Select a supplier</option>
-          <option value="1">ABC Pharma</option>
-          <option value="2">XYZ Distributors</option>
-        </select>
+        <input type="text" list="supplierlist" name="supplier_name" required plaseholdeer="Type or select">
+        <datalist id="supplierlist">
+          <?php while($row = $supplier->fetch_assoc()): ?>
+            <option value="<?php echo htmlspecialchars($row['name']); ?>"></option>
+          <?php endwhile; ?>         
+        </datalist>
       </div>
 
       <div class="section-title">Purchase Items</div>
 
       <div id="purchase-items-header">
         <div>Medicine</div>
+        <div>Generic Name</div>
         <div>Expiry Date</div>
         <div>Quantity</div>
         <div>Unit Price</div>
+        <div>Sale Price</div>
         <div>Total</div>
         <div>&nbsp;</div>
       </div>
@@ -239,89 +380,116 @@ include "../includes/sidebar.php";
         <!-- purchase item rows go here -->
       </div>
 
-      <button type="button" class="add-btn" onclick="addReturnRow()">+ Add Item</button>
+      <button type="button" class="add-medicine-btn" onclick="addRow()">+ Add Item</button>
 
       <div class="form-group" style="margin-top: 30px;">
-        <label for="total-refund">Total Amount</label>
-        <input type="number" id="total-amount" name="total_refund" readonly value="0.00" />
+        <label for="total-amount">Total Amount</label>
+        <input type="number" id="total-amount" name="total_amount" readonly value="0.00" />
       </div>
 
       <button type="submit" class="submit-btn">Confirm Purchase</button>
     </form>
   </div>
 
+  <datalist id="medicineList">
+    <?php foreach($medicinesData as $row): ?>
+        <option value="<?= htmlspecialchars($row['medicine_name']); ?>" data-id="<?= $row['stock_id']; ?>" data-qty="<?= $row['quantity']; ?>" data-price="<?= $row['sale_price']; ?>"></option>
+    <?php endforeach; ?>
+  </datalist>
+
+  <datalist id="typeList">
+    <?php foreach($typeData as $rows): ?>
+        <option value="<?= htmlspecialchars($rows['type_name']); ?>" data-id="<?= $row['id']; ?>" ></option>
+    <?php endforeach; ?>
+  </datalist>
+
   <script>
-    function addReturnRow() {
-      const container = document.getElementById('purchase-items-container');
-
-      const row = document.createElement('div');
-      row.className = 'purchase-item-row';
-
-      row.innerHTML = `
-        <div class="form-group">
-          <select name="stock_id[]" required onchange="calculateRefund(this)">
-            <option value="1" data-price="8">NAPA (Supplier Price)</option>
-            <option value="2" data-price="10">Maxpro (Supplier Price)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <input type="date" name="expiry_date[]" required />
-        </div>
-        <div class="form-group">
-          <input type="number" name="quantity[]" min="1" value="1" oninput="calculateRefund(this)" required />
-        </div>
-        <div class="form-group">
-          <input type="number" name="unit_price[]" step="0.01" value="8.00" readonly />
-        </div>
-        <div class="form-group">
-          <input type="number" name="total[]" step="0.01" value="8.00" readonly />
-        </div>
-        <div class="form-group">
-          <button type="button" class="delete-btn" onclick="removeRow(this)">❌</button>
-        </div>
-      `;
-
-      container.appendChild(row);
-      updateRefundTotal();
+    const medicines = <?= json_encode($medicinesData); ?>;
+class PurchaseForm {
+    constructor(formId, containerId, grandTotalId, medicines) {
+        this.form = document.getElementById(formId);
+        this.container = document.getElementById(containerId);
+        this.grandTotal = document.getElementById(grandTotalId);
+        this.medicines = medicines;
+        this.init();
     }
 
-    function calculateRefund(elem) {
-      const row = elem.closest('.purchase-item-row');
+    init() {
+        this.addRow();
+        document.querySelector('.add-medicine-btn').addEventListener('click', () => this.addRow());
 
-      const qtyInput = row.querySelector('input[name="quantity[]"]');
-      const qty = parseFloat(qtyInput.value) || 0;
-
-      const select = row.querySelector('select[name="stock_id[]"]');
-      const price = parseFloat(select.options[select.selectedIndex].dataset.price) || 0;
-
-      const unitPriceInput = row.querySelector('input[name="unit_price[]"]');
-      const totalInput = row.querySelector('input[name="total[]"]');
-
-      unitPriceInput.value = price.toFixed(2);
-      totalInput.value = (qty * price).toFixed(2);
-
-      updateRefundTotal();
+        this.form.addEventListener('submit', (e) => {
+            if (!confirm('Confirm this purchase?')) e.preventDefault();
+        });
     }
 
-    function updateRefundTotal() {
-      let total = 0;
-      document.querySelectorAll('input[name="total[]"]').forEach(input => {
-        total += parseFloat(input.value) || 0;
-      });
-      document.getElementById('total-amount').value = total.toFixed(2);
-    }
+    addRow() {
+    const row = document.createElement('div');
+    row.className = 'purchase-item-row';
+    row.innerHTML = `
+        <div class="form-group">
+            <input list="medicineList" name="medicine_name[]" required placeholder="Select medicine">
+            <input type="hidden" name="stock_id[]">
+        </div>
+        <div class="form-group">
+            <input list="typeList" name="type_name[]" required placeholder="Select or type">
+            <input type="hidden" name="id[]">
+        </div>
+        <div class="form-group">
+            <input type="date" name="expiry_date[]" required />
+        </div>
+        <div class="form-group">
+            <input type="number" name="quantity[]" min="1" value="1" required />
+        </div>
+        <div class="form-group">
+            <input type="number" name="unit_price[]" step="0.01" placeholder="Enter unit price" required />
+        </div>
+        <div class="form-group">
+            <input type="number" name="sale_price[]" step="0.01" placeholder="Enter sale price" required />
+        </div>
+        <div class="form-group">
+            <input type="number" name="total[]" step="0.01" value="0.00" readonly />
+        </div>
+        <div class="form-group">
+            <button type="button" class="delete-btn">❌</button>
+        </div>
+    `;
 
-    function removeRow(button) {
-      const row = button.closest('.purchase-item-row');
-      if (row) {
-        row.remove();
-        updateRefundTotal();
-      }
-    }
+    const qtyInput = row.querySelector('[name="quantity[]"]');
+    const unitInput = row.querySelector('[name="unit_price[]"]');
+    const totalInput = row.querySelector('[name="total[]"]');
 
-    window.onload = () => {
-      addReturnRow();
+    const updateRow = () => {
+        const qty = parseFloat(qtyInput.value) || 0;
+        const unit = parseFloat(unitInput.value) || 0;
+        totalInput.value = (qty * unit).toFixed(2);  
+        this.updateTotal();
     };
+
+    qtyInput.addEventListener('input', updateRow);
+    unitInput.addEventListener('input', updateRow);
+
+    row.querySelector('.delete-btn').addEventListener('click', () => {
+        row.remove();
+        this.updateTotal();
+    });
+
+    this.container.appendChild(row);
+}
+updateTotal() {
+    let total = 0;
+    this.container.querySelectorAll('[name="total[]"]').forEach(inp => {
+        total += parseFloat(inp.value) || 0;
+    });
+    this.grandTotal.value = total.toFixed(2);
+}
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    new PurchaseForm('purchaseForm', 'purchase-items-container', 'total-amount', medicines);
+});
+
+
   </script>
 </body>
 </html>
