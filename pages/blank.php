@@ -1,8 +1,9 @@
-.form-container {
+    
+    .form-container {
       background: #1a1f2e;
       border-radius: 14px;
-      padding: 30px 40px;
-      max-width: 900px;
+      padding: 30px 20px;
+      max-width: 1000px;
       width: 100%;
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
       border: 1px solid rgba(255, 255, 255, 0.05);
@@ -58,12 +59,16 @@
     /* Header for return items */
     #purchase-items-header {
       display: grid;
-      grid-template-columns: 1.5fr 1.5fr 1fr 1fr 1fr 1fr 50px;
-      gap: 15px;
-      margin-bottom: 5px;
+      grid-template-columns: 1.5fr 1.5fr 1.8fr 1fr 1fr 1fr 1fr 50px;
+      gap: 20px;
+      margin-bottom: 8px;
       font-weight: 600;
       color: #ccc;
       user-select: none;
+      align-items: center;
+    }
+    #purchase-items-header div{
+      text-align: center;
     }
 
     /* Container for all return item rows */
@@ -77,7 +82,7 @@
     /* Each return item row is a grid with 6 columns */
     .purchase-item-row {
       display: grid;
-      grid-template-columns: 1.5fr 1.5fr 1fr 1fr 1fr 1fr 50px;
+      grid-template-columns: 1.5fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr 50px;
       gap: 15px;
       align-items: center;
     }
@@ -182,3 +187,5 @@
     height: 48px;
   }
 }
+
+    

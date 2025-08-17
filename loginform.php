@@ -1,3 +1,9 @@
+ <?php
+   session_start();
+include "includes/dbconnection.php";
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -141,21 +147,6 @@
 </body>
 </html>
 <?php
-session_start();
-
-// Database connection settings
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "rainstar_pharma";
-
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check DB connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
 
 // Process login form
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -177,7 +168,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Verify password
         if (password_verify($password, $dbPassword)) {
             // Store user info in session
-            $_SESSION['user_id'] = $id;
+            $_SESSION['id'] = $id;
             $_SESSION['username'] = $dbUsername;
             $_SESSION['role'] = $dbRole;
 

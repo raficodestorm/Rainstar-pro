@@ -64,10 +64,10 @@ CREATE TABLE stock (
     sale_price DECIMAL(10,2),
     manufacture_date DATE,
     expiry_date DATE,
-    supplier_id INT,
+    supplier_name INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (medicine_type_id) REFERENCES medicine_type(id),
-    FOREIGN KEY (supplier_id) REFERENCES supplier(id)
+    FOREIGN KEY (supplier_name) REFERENCES supplier(name)
 );
 
 -- 7. Customers Table

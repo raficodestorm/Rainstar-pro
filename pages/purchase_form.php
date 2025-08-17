@@ -1,7 +1,5 @@
 <?php
 session_start();
-// blank-page.php
-// Keeps header, sidebar, navbar and footer. Content area is intentionally empty.
 include "../includes/header.php";
 include "../includes/sidebar.php";
 ?>
@@ -10,12 +8,10 @@ include "../includes/sidebar.php";
 
   <div class="main-panel">
     <div class="content-wrapper">
-<!-- contant area start----------------------------------------------------------------------------->
-   <?php
+<!------------------------------------- contant area start------------------------------------->
+<?php
 include "../includes/dbconnection.php";
 
-$_SESSION['pharmacist_id'] = 1; 
-$_SESSION['pharmacist_name'] = "John Doe";
 // Fetch medicines
 $medicinesData = [];
 $medicines = $conn->query("SELECT id AS stock_id, medicine_name, sale_price, quantity FROM stock");
@@ -23,97 +19,89 @@ while ($row = $medicines->fetch_assoc()) {
     $medicinesData[] = $row;
 }
 
-$supplier = $conn->query("SELECT id, name FROM supplier");
+// Fetch medicine types
 $typeData = [];
 $medicineType = $conn->query("SELECT id, type_name FROM medicine_type");
 while ($rows = $medicineType->fetch_assoc()) {
-  $typeData[] = $rows;
+    $typeData[] = $rows;
 }
 
+// Fetch suppliers
+$supplier = $conn->query("SELECT id, name FROM supplier");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Start transaction
     $conn->begin_transaction();
     try {
         // Sanitize input
-        $invoice_number = trim($_POST['invoice_number']);
-        $supplier_name = trim($_POST['supplier_name']);
-        $total_amount = floatval($_POST['total_amount']);
-        $pharmacist_id = $_SESSION['pharmacist_id'];
-        $pharmacist_name = $_SESSION['pharmacist_name'];
-        $purchase_date = date("Y-m-d H:i:s");
+        $invoice_number   = trim($_POST['invoice_number']);
+        $supplier_name    = trim($_POST['supplier_name']);
+        $total_amount     = floatval($_POST['total_amount']);
+        $pharmacist_id    = $_SESSION['id'];
+        $pharmacist_name  = $_SESSION['username'];
 
-        // Get supplier_id (or insert if not exists)
-        $supplier_stmt = $conn->prepare("SELECT id FROM supplier WHERE name = ?");
-        $supplier_stmt->bind_param("s", $supplier_name);
-        $supplier_stmt->execute();
-        $supplier_stmt->bind_result($supplier_id);
-        if ($supplier_stmt->fetch()) {
-            // Found supplier
-        } else {
-            $supplier_stmt->close();
-            $insert_supplier = $conn->prepare("INSERT INTO supplier (name) VALUES (?)");
-            $insert_supplier->bind_param("s", $supplier_name);
-            $insert_supplier->execute();
-            $supplier_id = $insert_supplier->insert_id;
-            $insert_supplier->close();
-        }
-        
+        $supp_id = null;
+            $supp_stmt = $conn->prepare("SELECT id FROM supplier WHERE name = ?");
+            $supp_stmt->bind_param("s", $supplier_name);
+            $supp_stmt->execute();
+            $supp_stmt->bind_result($supp_id);
+            $existss = $supp_stmt->fetch();
+            $supp_stmt->close(); 
 
-        // Insert purchase record
+        // Insert purchase
         $purchase_stmt = $conn->prepare("
-            INSERT INTO purchases (invoice_number, supplier_id, supplier_name, total_amount, pharmacist_name, purchase_date) 
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO purchases (invoice_number,supplier_id, supplier_name, total_amount, pharmacist_name) 
+            VALUES (?, ?, ?, ?, ?)
         ");
-        $purchase_stmt->bind_param("sisdss", $invoice_number, $supplier_id, $supplier_name, $total_amount, $pharmacist_name, $purchase_date);
+        $purchase_stmt->bind_param("sisds", $invoice_number, $supp_id, $supplier_name, $total_amount, $pharmacist_name);
         $purchase_stmt->execute();
         $purchase_id = $purchase_stmt->insert_id;
         $purchase_stmt->close();
 
-        // Loop through items
+        // Loop items
         foreach ($_POST['medicine_name'] as $i => $medicine_name) {
-            $type_name = $_POST['type_name'][$i];
+            $type_name   = $_POST['type_name'][$i];
             $expiry_date = $_POST['expiry_date'][$i];
-            $quantity = intval($_POST['quantity'][$i]);
-            $unit_price = floatval($_POST['unit_price'][$i]);
-            $sale_price = floatval($_POST['sale_price'][$i]);
+            $quantity    = intval($_POST['quantity'][$i]);
+            $unit_price  = floatval($_POST['unit_price'][$i]);
+            $sale_price  = floatval($_POST['sale_price'][$i]);
 
-            // 1. Handle medicine type
+            // Ensure medicine type
+            // Ensure medicine type
+            $medicine_type_id = null;
             $type_stmt = $conn->prepare("SELECT id FROM medicine_type WHERE type_name = ?");
             $type_stmt->bind_param("s", $type_name);
             $type_stmt->execute();
             $type_stmt->bind_result($medicine_type_id);
-            if ($type_stmt->fetch()) {
-                // type exists
-            } else {
-                $type_stmt->close();
+            $exists = $type_stmt->fetch();
+            $type_stmt->close();  
+
+            if (!$exists) {
                 $insert_type = $conn->prepare("INSERT INTO medicine_type (type_name) VALUES (?)");
                 $insert_type->bind_param("s", $type_name);
                 $insert_type->execute();
                 $medicine_type_id = $insert_type->insert_id;
                 $insert_type->close();
-                $type_stmt = null;
-            }
-            if ($type_stmt) $type_stmt->close();
+                }
 
-            // 2. Handle stock (check if medicine exists)
+            // Check stock
+            $stock_id = null;
+            $current_qty = 0;
             $stock_stmt = $conn->prepare("SELECT id, quantity FROM stock WHERE medicine_name = ?");
             $stock_stmt->bind_param("s", $medicine_name);
             $stock_stmt->execute();
             $stock_stmt->bind_result($stock_id, $current_qty);
             if ($stock_stmt->fetch()) {
-                // Medicine exists → update stock
                 $new_qty = $current_qty + $quantity;
                 $stock_stmt->close();
                 $update_stock = $conn->prepare("
-                    UPDATE stock SET quantity = ?, purchase_price = ?, sale_price = ?, expiry_date = ?, supplier_id = ?, medicine_type_id = ?
+                    UPDATE stock 
+                    SET quantity = ?, purchase_price = ?, sale_price = ?, expiry_date = ?, supplier_id = ?, medicine_type_id = ?
                     WHERE id = ?
                 ");
                 $update_stock->bind_param("iddsiii", $new_qty, $unit_price, $sale_price, $expiry_date, $supplier_id, $medicine_type_id, $stock_id);
                 $update_stock->execute();
                 $update_stock->close();
             } else {
-                // Medicine not found → insert new
                 $stock_stmt->close();
                 $insert_stock = $conn->prepare("
                     INSERT INTO stock (medicine_name, medicine_type_id, quantity, purchase_price, sale_price, expiry_date, supplier_id)
@@ -125,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $insert_stock->close();
             }
 
-            // 3. Insert into purchase_items
+            // Insert purchase item
             $item_stmt = $conn->prepare("
                 INSERT INTO purchase_items (purchase_id, stock_id, quantity, unit_price) 
                 VALUES (?, ?, ?, ?)
@@ -135,7 +123,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $item_stmt->close();
         }
 
-        // Commit transaction
         $conn->commit();
         echo "<script>alert('Purchase successfully saved!'); window.location.href='purchase_form.php';</script>";
 
@@ -355,7 +342,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       <div class="form-group">
         <label for="supplier">Select Supplier</label>
-        <input type="text" list="supplierlist" name="supplier_name" required plaseholdeer="Type or select">
+        <input type="text" list="supplierlist" name="supplier_name" required placeholder="Type or select">
         <datalist id="supplierlist">
           <?php while($row = $supplier->fetch_assoc()): ?>
             <option value="<?php echo htmlspecialchars($row['name']); ?>"></option>
@@ -376,11 +363,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div>&nbsp;</div>
       </div>
 
-      <div id="purchase-items-container">
-        <!-- purchase item rows go here -->
-      </div>
+      <div id="purchase-items-container"></div>
 
-      <button type="button" class="add-medicine-btn" onclick="addRow()">+ Add Item</button>
+      <button type="button" class="add-medicine-btn">+ Add Item</button>
 
       <div class="form-group" style="margin-top: 30px;">
         <label for="total-amount">Total Amount</label>
@@ -393,103 +378,104 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <datalist id="medicineList">
     <?php foreach($medicinesData as $row): ?>
-        <option value="<?= htmlspecialchars($row['medicine_name']); ?>" data-id="<?= $row['stock_id']; ?>" data-qty="<?= $row['quantity']; ?>" data-price="<?= $row['sale_price']; ?>"></option>
+        <option value="<?= htmlspecialchars($row['medicine_name']); ?>" 
+                data-id="<?= $row['stock_id']; ?>" 
+                data-qty="<?= $row['quantity']; ?>" 
+                data-price="<?= $row['sale_price']; ?>">
+        </option>
     <?php endforeach; ?>
   </datalist>
 
   <datalist id="typeList">
     <?php foreach($typeData as $rows): ?>
-        <option value="<?= htmlspecialchars($rows['type_name']); ?>" data-id="<?= $row['id']; ?>" ></option>
+        <option value="<?= htmlspecialchars($rows['type_name']); ?>" data-id="<?= $rows['id']; ?>"></option>
     <?php endforeach; ?>
   </datalist>
 
   <script>
     const medicines = <?= json_encode($medicinesData); ?>;
-class PurchaseForm {
-    constructor(formId, containerId, grandTotalId, medicines) {
-        this.form = document.getElementById(formId);
-        this.container = document.getElementById(containerId);
-        this.grandTotal = document.getElementById(grandTotalId);
-        this.medicines = medicines;
-        this.init();
+    class PurchaseForm {
+        constructor(formId, containerId, grandTotalId, medicines) {
+            this.form = document.getElementById(formId);
+            this.container = document.getElementById(containerId);
+            this.grandTotal = document.getElementById(grandTotalId);
+            this.medicines = medicines;
+            this.init();
+        }
+
+        init() {
+            this.addRow();
+            document.querySelector('.add-medicine-btn').addEventListener('click', () => this.addRow());
+
+            this.form.addEventListener('submit', (e) => {
+                if (!confirm('Confirm this purchase?')) e.preventDefault();
+            });
+        }
+
+        addRow() {
+            const row = document.createElement('div');
+            row.className = 'purchase-item-row';
+            row.innerHTML = `
+                <div class="form-group">
+                    <input list="medicineList" name="medicine_name[]" required placeholder="Select medicine">
+                </div>
+                <div class="form-group">
+                    <input list="typeList" name="type_name[]" required placeholder="Select or type">
+                </div>
+                <div class="form-group">
+                    <input type="date" name="expiry_date[]" required />
+                </div>
+                <div class="form-group">
+                    <input type="number" name="quantity[]" min="1" value="1" required />
+                </div>
+                <div class="form-group">
+                    <input type="number" name="unit_price[]" step="0.01" placeholder="Enter unit price" required />
+                </div>
+                <div class="form-group">
+                    <input type="number" name="sale_price[]" step="0.01" placeholder="Enter sale price" required />
+                </div>
+                <div class="form-group">
+                    <input type="number" name="total[]" step="0.01" value="0.00" readonly />
+                </div>
+                <div class="form-group">
+                    <button type="button" class="delete-btn">❌</button>
+                </div>
+            `;
+
+            const qtyInput = row.querySelector('[name="quantity[]"]');
+            const unitInput = row.querySelector('[name="unit_price[]"]');
+            const totalInput = row.querySelector('[name="total[]"]');
+
+            const updateRow = () => {
+                const qty = parseFloat(qtyInput.value) || 0;
+                const unit = parseFloat(unitInput.value) || 0;
+                totalInput.value = (qty * unit).toFixed(2);  
+                this.updateTotal();
+            };
+
+            qtyInput.addEventListener('input', updateRow);
+            unitInput.addEventListener('input', updateRow);
+
+            row.querySelector('.delete-btn').addEventListener('click', () => {
+                row.remove();
+                this.updateTotal();
+            });
+
+            this.container.appendChild(row);
+        }
+
+        updateTotal() {
+            let total = 0;
+            this.container.querySelectorAll('[name="total[]"]').forEach(inp => {
+                total += parseFloat(inp.value) || 0;
+            });
+            this.grandTotal.value = total.toFixed(2);
+        }
     }
 
-    init() {
-        this.addRow();
-        document.querySelector('.add-medicine-btn').addEventListener('click', () => this.addRow());
-
-        this.form.addEventListener('submit', (e) => {
-            if (!confirm('Confirm this purchase?')) e.preventDefault();
-        });
-    }
-
-    addRow() {
-    const row = document.createElement('div');
-    row.className = 'purchase-item-row';
-    row.innerHTML = `
-        <div class="form-group">
-            <input list="medicineList" name="medicine_name[]" required placeholder="Select medicine">
-            <input type="hidden" name="stock_id[]">
-        </div>
-        <div class="form-group">
-            <input list="typeList" name="type_name[]" required placeholder="Select or type">
-            <input type="hidden" name="id[]">
-        </div>
-        <div class="form-group">
-            <input type="date" name="expiry_date[]" required />
-        </div>
-        <div class="form-group">
-            <input type="number" name="quantity[]" min="1" value="1" required />
-        </div>
-        <div class="form-group">
-            <input type="number" name="unit_price[]" step="0.01" placeholder="Enter unit price" required />
-        </div>
-        <div class="form-group">
-            <input type="number" name="sale_price[]" step="0.01" placeholder="Enter sale price" required />
-        </div>
-        <div class="form-group">
-            <input type="number" name="total[]" step="0.01" value="0.00" readonly />
-        </div>
-        <div class="form-group">
-            <button type="button" class="delete-btn">❌</button>
-        </div>
-    `;
-
-    const qtyInput = row.querySelector('[name="quantity[]"]');
-    const unitInput = row.querySelector('[name="unit_price[]"]');
-    const totalInput = row.querySelector('[name="total[]"]');
-
-    const updateRow = () => {
-        const qty = parseFloat(qtyInput.value) || 0;
-        const unit = parseFloat(unitInput.value) || 0;
-        totalInput.value = (qty * unit).toFixed(2);  
-        this.updateTotal();
-    };
-
-    qtyInput.addEventListener('input', updateRow);
-    unitInput.addEventListener('input', updateRow);
-
-    row.querySelector('.delete-btn').addEventListener('click', () => {
-        row.remove();
-        this.updateTotal();
+    window.addEventListener('DOMContentLoaded', () => {
+        new PurchaseForm('purchaseForm', 'purchase-items-container', 'total-amount', medicines);
     });
-
-    this.container.appendChild(row);
-}
-updateTotal() {
-    let total = 0;
-    this.container.querySelectorAll('[name="total[]"]').forEach(inp => {
-        total += parseFloat(inp.value) || 0;
-    });
-    this.grandTotal.value = total.toFixed(2);
-}
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-    new PurchaseForm('purchaseForm', 'purchase-items-container', 'total-amount', medicines);
-});
-
-
   </script>
 </body>
 </html>
