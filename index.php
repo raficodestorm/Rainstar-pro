@@ -91,10 +91,10 @@
 </head>
 <body>
   <!-- Background Video -->
-  <video autoplay muted loop>
-    <source src="images/bgv.mp4" type="video/mp4">
+  <!-- <video autoplay muted loop>
+    <source src="" type="video/mp4">
     Your browser does not support the video tag.
-  </video>
+  </video> -->
 
   <!-- Centered Content -->
   <div class="content">
