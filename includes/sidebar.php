@@ -1,4 +1,13 @@
 <body>
+  <?php
+          
+          // if(isset($_POST['logout'])) {
+          //   session_destroy();
+          //   header('Location: ../pages/loginform.php');
+          //   exit();
+          // }
+        ?>
+  <?php include "dbconnection.php"; ?>
     <div class="container-scroller">
       <!-- partial:partials/_sidebar.html -->
       <nav class="sidebar sidebar-offcanvas" id="sidebar">
@@ -82,6 +91,70 @@
                 <i class="mdi mdi-speedometer"></i>
               </span>
               <span class="menu-title">Purchase_Return</span>
+            </a>
+          </li>
+
+          <li class="nav-item menu-items">
+            <a class="nav-link" href="stock.php">
+              <span class="menu-icon">
+                <i class="mdi mdi-speedometer"></i>
+              </span>
+              <span class="menu-title">Stock</span>
+            </a>
+          </li>
+
+          <li class="nav-item menu-items" id="menuadd">
+            <a class="nav-link" href="purchase_return.php">
+              <span class="menu-icon">
+                <i class="mdi mdi-speedometer"></i>
+              </span>
+              <span class="menu-title">Sale History</span>
+            </a>
+            <ul id="menuadd-sub">
+                <li>
+                  <a class="" href="allsales.php">
+                    <span class="">
+                      <i class="mdi mdi-speedometer"></i>
+                    </span>
+                    <span class="sub-text">All sales</span>
+                  </a>
+              </li>
+
+              <li>
+                  <a class="" href="sale_items.php">
+                    <span class="">
+                      <i class="mdi mdi-speedometer"></i>
+                    </span>
+                    <span class="sub-text">Sale items</span>
+                  </a>
+              </li>
+            </ul>
+          </li>
+
+          <li class="nav-item menu-items">
+            <a class="nav-link" href="purchase_return.php">
+              <span class="menu-icon">
+                <i class="mdi mdi-speedometer"></i>
+              </span>
+              <span class="menu-title">Purchase History</span>
+            </a>
+          </li>
+
+          <li class="nav-item menu-items">
+            <a class="nav-link" href="purchase_return.php">
+              <span class="menu-icon">
+                <i class="mdi mdi-speedometer"></i>
+              </span>
+              <span class="menu-title">Users</span>
+            </a>
+          </li>
+
+          <li class="nav-item menu-items">
+            <a class="nav-link" href="purchase_return.php">
+              <span class="menu-icon">
+                <i class="mdi mdi-speedometer"></i>
+              </span>
+              <span class="menu-title">Regular Customers</span>
             </a>
           </li>
 

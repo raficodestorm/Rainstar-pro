@@ -1,20 +1,8 @@
 <?php
-session_start(); // ensure session is active
-// blank-page.php
-// Keeps header, sidebar, navbar and footer. Content area is intentionally empty.
-include "../includes/header.php";
-include "../includes/sidebar.php";
-?>
-<div class="container-fluid page-body-wrapper">
-  <?php include "../includes/navbar.php"; ?>
-
-  <div class="main-panel">
-    <div class="content-wrapper">
-
-   <?php
+session_start();
 include "../includes/dbconnection.php";
 
-
+    
     // Fetch medicines
     $medicinesData = [];
     $medicines = $conn->query("SELECT id AS stock_id, medicine_name, sale_price, quantity FROM stock");
@@ -30,14 +18,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $customer_name = trim($_POST['customer_name']);
     $grand_total = floatval($_POST['grand_total']);
     $stock_ids = $_POST['stock_id'];
+    $medicines = $_POST['medicine_name'];
     $quantities = $_POST['quantity'];
     $prices = $_POST['sale_price'];
 
     // 1. Get pharmacist ID from session
-    if (!isset($_SESSION['user_id'])) {
+    if (!isset($_SESSION['id'])) {
         die("Error: No pharmacist logged in.");
     }
-    $pharmacist_id = $_SESSION['user_id'];
+    $pharmacist_id = $_SESSION['id'];
 
     // 2. Find customer ID from name
     $stmt = $conn->prepare("SELECT id FROM customers WHERE name = ?");
@@ -73,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Insert sale items + update stock
         for ($i = 0; $i < count($stock_ids); $i++) {
             $stk_id = $stock_ids[$i];
+            $med_name = $medicines[$i];
             $qty = $quantities[$i];
             $unit_price = $prices[$i];
 
@@ -89,8 +79,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // Insert sale item
-            $stmt = $conn->prepare("INSERT INTO sale_items (sale_id, stock_id, quantity, unit_price) VALUES (?, ?, ?, ?)");
-            $stmt->bind_param("iiid", $sale_id, $stk_id, $qty, $unit_price);
+            $stmt = $conn->prepare("INSERT INTO sale_items (sale_id, stock_id, medicine, quantity, unit_price) VALUES (?, ?, ?, ?, ?)");
+            $stmt->bind_param("iisid", $sale_id, $stk_id, $med_name, $qty, $unit_price);
             if (!$stmt->execute()) {
                 throw new Exception("Execute failed for sale_items: " . $stmt->error);
             }
@@ -104,12 +94,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $conn->commit();
-        echo "<div class='sale-msg'>Sale saved successfully</div>";
+        header("Location: invoice.php?sale_id=" . $sale_id);
+        exit;
     } catch (Exception $e) {
         $conn->rollback();
         echo "Error: " . $e->getMessage();
     }
 }
+include "../includes/header.php";
+include "../includes/sidebar.php";
+?>
+<div class="container-fluid page-body-wrapper">
+  <?php include "../includes/navbar.php"; ?>
+
+  <div class="main-panel">
+    <div class="content-wrapper">
+
+   <?php
+   
+
 ?>
 
 <!DOCTYPE html>

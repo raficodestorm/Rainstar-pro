@@ -1,5 +1,5 @@
 <?php
-session_start();
+    session_start();
 include "../includes/header.php";
 include "../includes/sidebar.php";
 ?>
@@ -65,7 +65,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $unit_price  = floatval($_POST['unit_price'][$i]);
             $sale_price  = floatval($_POST['sale_price'][$i]);
 
-            // Ensure medicine type
             // Ensure medicine type
             $medicine_type_id = null;
             $type_stmt = $conn->prepare("SELECT id FROM medicine_type WHERE type_name = ?");

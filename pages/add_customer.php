@@ -10,7 +10,28 @@ include "../includes/sidebar.php";
   <div class="main-panel">
     <div class="content-wrapper">
 <!-- contant area start----------------------------------------------------------------------------->
-   
+   <?php
+include "../includes/dbconnection.php";
+
+$popup = false; // default no popup
+
+if (isset($_POST['addcustomer'])) {
+    $name  = $_POST['name'];
+    $phone = $_POST['phone'];
+    $email = $_POST['email'];
+    $addr  = $_POST['address'];
+
+    $customer = $conn->prepare("INSERT INTO customers(name, email, phone, address) VALUES(?, ?, ?, ?)");
+    $customer->bind_param("ssss", $name, $email, $phone, $addr);
+
+    if ($customer->execute()) {
+        $popup = true; // set flag for JS
+    } else {
+        echo "<div style='color:red;'>Error: " . $customer->error . "</div>";
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -126,7 +147,7 @@ include "../includes/sidebar.php";
 <body>
   <div class="form-container">
     <h2>Add Regular Customer</h2>
-    <form id="addCustomerForm">
+    <form id="addCustomerForm" method="POST">
       <div class="form-group">
         <label for="customer-name">Customer Name</label>
         <input type="text" id="customer-name" name="name" required placeholder="Enter full name">
@@ -147,17 +168,30 @@ include "../includes/sidebar.php";
         <textarea id="address" name="address" rows="3" placeholder="Enter customer address" required></textarea>
       </div>
 
-      <button type="submit" class="submit-btn">Add Customer</button>
+      <button type="submit" class="submit-btn"  name="addcustomer">Add Customer</button>
     </form>
   </div>
 
   <script>
-    document.getElementById("addCustomerForm").addEventListener("submit", function(event) {
-      event.preventDefault(); // Stop actual submission
-      alert("Customer added successfully!");
-      this.reset();
+<?php if ($popup): ?>
+  // SweetAlert2 Popup (nice modern popup)
+  window.onload = function() {
+    Swal.fire({
+      icon: 'success',
+      title: 'Customer Added',
+      text: 'The customer has been saved successfully!',
+      confirmButtonColor: '#4dabf7'
+    }).then(() => {
+      // Reset form after OK
+      document.getElementById("addCustomerForm").reset();
     });
-  </script>
+  };
+<?php endif; ?>
+</script>
+
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 </body>
 
 </html>

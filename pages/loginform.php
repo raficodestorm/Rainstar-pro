@@ -1,6 +1,6 @@
  <?php
-   session_start();
-include "includes/dbconnection.php";
+
+include "../includes/dbconnection.php";
 ?>
 
 
@@ -167,6 +167,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         // Verify password
         if (password_verify($password, $dbPassword)) {
+            session_start();
             // Store user info in session
             $_SESSION['id'] = $id;
             $_SESSION['username'] = $dbUsername;
@@ -174,9 +175,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             // Redirect based on role
             if ($dbRole == 'pharmacist') {
-                header("Location: pages/pharmacist_dashboard.php");
+                header("Location: pharmacist_dashboard.php");
             } elseif ($dbRole == 'admin') {
-                header("Location: pages/pharmacist_dashboard.php");
+                header("Location: pharmacist_dashboard.php");
             }
             exit;
         } else {

@@ -1,3 +1,4 @@
+       
  <!-- partial:partials/_navbar.html -->
         <nav class="navbar p-0 fixed-top d-flex flex-row">
           <div class="navbar-brand-wrapper d-flex d-lg-none align-items-center justify-content-center">
@@ -146,16 +147,20 @@
                     </div>
                   </a>
                   <div class="dropdown-divider"></div>
-                  <a class="dropdown-item preview-item">
-                    <div class="preview-thumbnail">
-                      <div class="preview-icon bg-dark rounded-circle">
-                        <i class="mdi mdi-logout text-danger"></i>
+                  <form method="POST" style="margin:0;">
+                    <button type="submit" name="logout" class="dropdown-item preview-item" 
+                            style="background: transparent; border: none; width:100%; text-align:left; color:inherit; cursor:pointer;">
+                      <div class="preview-thumbnail">
+                        <div class="preview-icon bg-dark rounded-circle">
+                          <i class="mdi mdi-logout text-danger"></i>
+                        </div>
                       </div>
-                    </div>
-                    <div class="preview-item-content">
-                      <p class="preview-subject mb-1">Log out</p>
-                    </div>
-                  </a>
+                      <div class="preview-item-content">
+                        <p class="preview-subject mb-1"><a href="loginform.php">Log out</a></p>
+                      </div>
+                    </button>
+                  </form>
+
                   <div class="dropdown-divider"></div>
                   <p class="p-3 mb-0 text-center">Advanced settings</p>
                 </div>
@@ -166,3 +171,5 @@
             </button>
           </div>
         </nav>
+
+        
