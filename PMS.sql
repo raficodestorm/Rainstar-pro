@@ -95,7 +95,7 @@ CREATE TABLE sale_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     sale_id INT,
     stock_id INT,
-    medicine VARCHAR(100,
+    medicine VARCHAR(100),
     quantity INT NOT NULL,
     unit_price DECIMAL(10,2) NOT NULL,
     FOREIGN KEY (sale_id) REFERENCES sales(id),
@@ -122,7 +122,7 @@ CREATE TABLE purchases (
     supplier_id INT,
     supplier_name VARCHAR(100),
     total_amount DECIMAL(10,2),
-    pharmacist_name VARCHAR(100)
+    pharmacist_name VARCHAR(100),
     purchase_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (supplier_id) REFERENCES supplier(id)
 );
