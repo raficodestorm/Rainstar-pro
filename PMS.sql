@@ -64,11 +64,9 @@ CREATE TABLE stock (
     sale_price DECIMAL(10,2),
     expiry_date DATE,
     supplier_id INT,
-    supplier_name INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (medicine_type_id) REFERENCES medicine_type(id),
-    FOREIGN KEY (supplier_id) REFERENCES supplier(id),
-    FOREIGN KEY (supplier_name) REFERENCES supplier(name)
+    FOREIGN KEY (supplier_id) REFERENCES supplier(id)
 );
 
 -- 7. Customers Table
@@ -97,6 +95,7 @@ CREATE TABLE sale_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     sale_id INT,
     stock_id INT,
+    medicine VARCHAR(100,
     quantity INT NOT NULL,
     unit_price DECIMAL(10,2) NOT NULL,
     FOREIGN KEY (sale_id) REFERENCES sales(id),
@@ -119,8 +118,11 @@ CREATE TABLE return_items (
 -- 11. Purchases Table
 CREATE TABLE purchases (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    invoice_number VARCHAR(100),
     supplier_id INT,
+    supplier_name VARCHAR(100),
     total_amount DECIMAL(10,2),
+    pharmacist_name VARCHAR(100)
     purchase_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (supplier_id) REFERENCES supplier(id)
 );
