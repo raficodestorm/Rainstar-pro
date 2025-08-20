@@ -65,7 +65,8 @@ include "../includes/sidebar.php";
 <?php
 $result = $conn->query("SELECT * FROM stock");
 if ($result->num_rows > 0) {
-    echo "<table><tr>
+    echo "<table>
+    <div><tr>
         <th>ID</th>
         <th>Med-name</th>
         <th>Med-type-id</th>
@@ -75,7 +76,7 @@ if ($result->num_rows > 0) {
         <th>Expiry-date</th>
         <th>Supplier-id</th>
         <th>Stored at</th>
-    </tr>";
+    </div></tr>";
     while ($row = $result->fetch_assoc()) {
         echo "<tr>
             <td>{$row['id']}</td>

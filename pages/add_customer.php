@@ -25,7 +25,7 @@ if (isset($_POST['addcustomer'])) {
     $customer->bind_param("ssss", $name, $email, $phone, $addr);
 
     if ($customer->execute()) {
-        $popup = true; // set flag for JS
+        $popup = true;
     } else {
         echo "<div style='color:red;'>Error: " . $customer->error . "</div>";
     }
@@ -171,6 +171,14 @@ if (isset($_POST['addcustomer'])) {
       <button type="submit" class="submit-btn"  name="addcustomer">Add Customer</button>
     </form>
   </div>
+  <audio id="click">
+  <source src="../images/success.mp3" type="audio/mpeg">
+</audio>
+<?php if (!empty($popup)) : ?>
+<script>
+    document.getElementById('click').play();
+</script>
+<?php endif; ?>
 
   <script>
 <?php if ($popup): ?>

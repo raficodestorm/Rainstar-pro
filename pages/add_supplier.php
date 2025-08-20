@@ -177,13 +177,22 @@ if (isset($_POST['addsupplier'])) {
     </form>
   </div>
 
+  <audio id="click">
+  <source src="../images/success.mp3" type="audio/mpeg">
+</audio>
+<?php if (!empty($popup)) : ?>
+<script>
+    document.getElementById('click').play();
+</script>
+<?php endif; ?>
+
   <script>
 <?php if ($popup): ?>
   // SweetAlert2 Popup (nice modern popup)
   window.onload = function() {
     Swal.fire({
       icon: 'success',
-      title: 'Customer Added',
+      title: 'Supplier Added',
       text: 'The supplier has been saved successfully!',
       confirmButtonColor: '#4dabf7'
     }).then(() => {

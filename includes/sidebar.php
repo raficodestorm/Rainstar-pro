@@ -66,31 +66,12 @@
             </ul>
           </li>
 
-
-          <li class="nav-item menu-items">
-            <a class="nav-link" href="sale_form.php">
-              <span class="menu-icon">
-                <i class="mdi mdi-speedometer"></i>
-              </span>
-              <span class="menu-title">Sale</span>
-            </a>
-          </li>
-
           <li class="nav-item menu-items">
             <a class="nav-link" href="sale_return.php">
               <span class="menu-icon">
                 <i class="mdi mdi-speedometer"></i>
               </span>
               <span class="menu-title">Sale_Return</span>
-            </a>
-          </li>
-
-          <li class="nav-item menu-items">
-            <a class="nav-link" href="purchase_form.php">
-              <span class="menu-icon">
-                <i class="mdi mdi-speedometer"></i>
-              </span>
-              <span class="menu-title">Purchase</span>
             </a>
           </li>
 

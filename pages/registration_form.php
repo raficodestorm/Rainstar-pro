@@ -1,6 +1,59 @@
 <?php
-// blank-page.php
-// Keeps header, sidebar, navbar and footer. Content area is intentionally empty.
+include "../includes/dbconnection.php";
+$popup = false;
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Get and sanitize form values
+    $fullname = trim($_POST['fullname']);
+    $username = trim($_POST['username']);
+    $email = trim($_POST['email']);
+    $phone = trim($_POST['phone']);
+    $branch = trim($_POST['branch']);
+    $role = $_POST['role'];
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+
+    // Handle image upload
+    // Handle image upload
+$imageName = $_FILES['image']['name'];
+$imageTmp = $_FILES['image']['tmp_name'];
+$imageExt = strtolower(pathinfo($imageName, PATHINFO_EXTENSION));
+
+// Allowed file types
+$allowedExt = ['jpg', 'jpeg', 'png', 'gif'];
+
+// Rename file to avoid overwriting
+$newImageName = uniqid("IMG_", true) . '.' . $imageExt;
+$imageFolder = "uploads/" . $newImageName;
+
+if (!is_dir("uploads")) {
+    mkdir("uploads", 0777, true);
+}
+
+if (in_array($imageExt, $allowedExt) && $_FILES['image']['size'] <= 2 * 1024 * 1024) {
+    if (move_uploaded_file($imageTmp, $imageFolder)) {
+        // Insert with the new image name
+        $stmt = $conn->prepare("INSERT INTO pharmacist (fullname, username, email, phone, branch, password, role_name, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssssssss", $fullname, $username, $email, $phone, $branch, $password, $role, $newImageName);
+
+
+        if ($stmt->execute()) {
+            $popup = true;
+        } else {
+            echo "<p style='color:red;'>Error: " . $stmt->error . "</p>";
+        }
+        $stmt->close();
+    } else {
+        echo "<p style='color:red;'>Image upload failed!</p>";
+    }
+} else {
+    echo "<p style='color:red;'>Invalid file type or file too large (Max: 2MB)</p>";
+}
+
+}
+
+$conn->close();
+?>
+
+<?php
 include "../includes/header.php";
 include "../includes/sidebar.php";
 ?>
@@ -140,7 +193,7 @@ input:focus, select:focus {
 
   <div class="reg-box">
   <h2>User Registration</h2>
-    <form action="#" method="POST" enctype="multipart/form-data">
+    <form id="addUser" action="#" method="POST" enctype="multipart/form-data">
     
       <div class="form-group">
         <label for="fullname">Fullname</label>
@@ -198,61 +251,35 @@ input:focus, select:focus {
 
 </body>
 </html>
+<audio id="click">
+  <source src="../images/success.mp3" type="audio/mpeg">
+</audio>
+<?php if (!empty($popup)) : ?>
+<script>
+    document.getElementById('click').play();
+</script>
+<?php endif; ?>
 
-<?php
-include "../includes/dbconnection.php";
+  <script>
+<?php if ($popup): ?>
+  // SweetAlert2 Popup (nice modern popup)
+  window.onload = function() {
+    Swal.fire({
+      icon: 'success',
+      title: 'User Added',
+      text: 'The user has been saved successfully!',
+      confirmButtonColor: '#4dabf7'
+    }).then(() => {
+      // Reset form after OK
+      document.getElementById("addUser").reset();
+    });
+  };
+<?php endif; ?>
+</script>
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Get and sanitize form values
-    $fullname = trim($_POST['fullname']);
-    $username = trim($_POST['username']);
-    $email = trim($_POST['email']);
-    $phone = trim($_POST['phone']);
-    $branch = trim($_POST['branch']);
-    $role = $_POST['role'];
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    // Handle image upload
-    // Handle image upload
-$imageName = $_FILES['image']['name'];
-$imageTmp = $_FILES['image']['tmp_name'];
-$imageExt = strtolower(pathinfo($imageName, PATHINFO_EXTENSION));
-
-// Allowed file types
-$allowedExt = ['jpg', 'jpeg', 'png', 'gif'];
-
-// Rename file to avoid overwriting
-$newImageName = uniqid("IMG_", true) . '.' . $imageExt;
-$imageFolder = "uploads/" . $newImageName;
-
-if (!is_dir("uploads")) {
-    mkdir("uploads", 0777, true);
-}
-
-if (in_array($imageExt, $allowedExt) && $_FILES['image']['size'] <= 2 * 1024 * 1024) {
-    if (move_uploaded_file($imageTmp, $imageFolder)) {
-        // Insert with the new image name
-        $stmt = $conn->prepare("INSERT INTO pharmacist (fullname, username, email, phone, branch, password, role_name, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("ssssssss", $fullname, $username, $email, $phone, $branch, $password, $role, $newImageName);
-
-
-        if ($stmt->execute()) {
-            echo "<p style='color:green;'>Registration successful!</p>";
-        } else {
-            echo "<p style='color:red;'>Error: " . $stmt->error . "</p>";
-        }
-        $stmt->close();
-    } else {
-        echo "<p style='color:red;'>Image upload failed!</p>";
-    }
-} else {
-    echo "<p style='color:red;'>Invalid file type or file too large (Max: 2MB)</p>";
-}
-
-}
-
-$conn->close();
-?>
 
 
 <!-- contant area end----------------------------------------------------------------------------->
