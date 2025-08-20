@@ -30,7 +30,7 @@
           </li>
 
           <li class="nav-item menu-items" id="menuadd">
-            <a class="nav-link" href="registration_form.php">
+            <a class="nav-link" href="#">
               <span class="menu-icon">
                 <i class="mdi mdi-speedometer"></i>
               </span>
@@ -52,6 +52,15 @@
                       <i class="mdi mdi-speedometer"></i>
                     </span>
                     <span class="sub-text">Add Customer</span>
+                  </a>
+              </li>
+
+              <li>
+                  <a class="" href="add_supplier.php">
+                    <span class="">
+                      <i class="mdi mdi-speedometer"></i>
+                    </span>
+                    <span class="sub-text">Add Supplier</span>
                   </a>
               </li>
             </ul>
@@ -104,7 +113,7 @@
           </li>
 
           <li class="nav-item menu-items" id="menuadd">
-            <a class="nav-link" href="purchase_return.php">
+            <a class="nav-link" href="#">
               <span class="menu-icon">
                 <i class="mdi mdi-speedometer"></i>
               </span>
@@ -132,7 +141,7 @@
           </li>
 
           <li class="nav-item menu-items">
-            <a class="nav-link" href="purchase_return.php">
+            <a class="nav-link" href="#">
               <span class="menu-icon">
                 <i class="mdi mdi-speedometer"></i>
               </span>
@@ -141,7 +150,7 @@
           </li>
 
           <li class="nav-item menu-items">
-            <a class="nav-link" href="purchase_return.php">
+            <a class="nav-link" href="#">
               <span class="menu-icon">
                 <i class="mdi mdi-speedometer"></i>
               </span>
@@ -150,7 +159,7 @@
           </li>
 
           <li class="nav-item menu-items">
-            <a class="nav-link" href="purchase_return.php">
+            <a class="nav-link" href="#">
               <span class="menu-icon">
                 <i class="mdi mdi-speedometer"></i>
               </span>

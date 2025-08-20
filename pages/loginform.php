@@ -137,8 +137,6 @@ include "../includes/dbconnection.php";
       <button type="submit" class="submit-btn">Login</button>
 
       <div class="links">
-        <a href="registrationf.php">Register</a>
-        |
         <a href="#">Forgot Password?</a>
       </div>
     </form>

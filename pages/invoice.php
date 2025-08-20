@@ -28,13 +28,40 @@ $items = $conn->query("SELECT medicine, quantity, unit_price FROM sale_items WHE
 <meta charset="UTF-8">
 <title>Invoice #<?= $sale['id']; ?></title>
 <style>
-body { font-family: Arial, sans-serif; }
-.invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; }
-h2 { text-align: center; }
-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-table, th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-tfoot td { font-weight: bold; }
-.print-btn { margin: 20px auto; display: block; padding: 10px 20px; background: #28a745; color: white; border: none; cursor: pointer; }
+body { 
+    font-family: Arial, sans-serif; 
+}
+.invoice-box {
+     max-width: 800px; 
+     margin: auto; 
+     padding: 30px; 
+     border: 1px solid #eee; 
+    }
+h2 { 
+    text-align: center; 
+}
+table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    margin-top: 20px; 
+}
+table, th, td { 
+    border: 1px solid #ccc; 
+    padding: 8px; 
+    text-align: left; 
+}
+tfoot td { 
+    font-weight: bold; 
+}
+.print-btn { 
+    margin: 20px auto; 
+    display: block; 
+    padding: 10px 20px; 
+    background: #28a745; 
+    color: white; 
+    border: none; 
+    cursor: pointer; 
+}
 img{
     width: 60px;
     height: 60px;

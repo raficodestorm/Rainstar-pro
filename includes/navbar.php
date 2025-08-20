@@ -17,22 +17,29 @@
             </ul>
             <ul class="navbar-nav navbar-nav-right">
               
-
-
+              <li class="nav-item">
+                <a href="purchase_form.php">
+                <button class="pos" title="sale" style="background: transparent; width: 60px; height: 25px; border: none; border-radius: 5px; margin-top:7px; margin-right: 40px;">
+                  <i class="mdi mdi-cart-plus" style="font-size:20px; color:#0d41e1;"></i>
+                </a>
+                </button>
+              </li>
 
               <li class="nav-item">
-                <button id="themeToggle" class="btn btn-outline-light btn-sm" title="Toggle theme">
-                  <i class="mdi mdi-weather-night"></i>
+                <a href="sale_form.php">
+                <button class="pos" title="sale" style="background: transparent; width: 60px; height: 25px; border: none; border-radius: 5px; margin-top:7px; margin-right: 100px;">
+                  <i class="mdi mdi-cash-register" style="font-size:20px; color:#4CAF50;"></i>
+                </a>
                 </button>
               </li>
 
 
-
-              <li class="nav-item nav-settings d-none d-lg-block">
-                <a class="nav-link" href="#">
-                  <i class="mdi mdi-view-grid"></i>
-                </a>
+              <li class="nav-item">
+                <button id="themeToggle" class="btn btn-outline-light btn-sm" title="Toggle theme" style="border: none;">
+                  <i class="mdi mdi-weather-night"></i>
+                </button>
               </li>
+
               <li class="nav-item dropdown border-left">
                 <a class="nav-link count-indicator dropdown-toggle" id="messageDropdown" href="#" data-toggle="dropdown" aria-expanded="false">
                   <i class="mdi mdi-email"></i>
