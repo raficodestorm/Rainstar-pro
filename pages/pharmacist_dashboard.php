@@ -1,3 +1,27 @@
+<?php
+include "../includes/dbconnection.php";
+
+// Fetch top 5 sold medicines
+$sql = "
+    SELECT s.medicine_name AS medicine_name, 
+           SUM(sd.quantity) AS total_sold, 
+           s.sale_price AS unit_price, 
+           SUM(sd.quantity * s.sale_price) AS total_revenue
+    FROM sale_items sd
+    JOIN stock s ON sd.medicine = s.medicine_name
+    GROUP BY s.id
+    ORDER BY total_sold DESC
+    LIMIT 5
+";
+$result = $conn->query($sql);
+$top_medicines = [];
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $top_medicines[] = $row;
+    }
+}
+?>
+
 <?php  include "../includes/header.php";  ?>
 <?php include "../includes/sidebar.php"; ?>
       <!-- partial -->
@@ -89,32 +113,74 @@
               </div>
             </div>
             <div class="row">
+              <!-- -----------------------Top product chart---------------------- -->
               <div class="col-md-4 grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body">
-                    <h4 class="card-title">Transaction History</h4>
-                    <canvas id="transaction-history" class="transaction-chart"></canvas>
-                    <div class="bg-gray-dark d-flex d-md-block d-xl-flex flex-row py-3 px-4 px-md-3 px-xl-4 rounded mt-3">
-                      <div class="text-md-center text-xl-left">
-                        <h6 class="mb-1">Transfer to Paypal</h6>
-                        <p class="text-muted mb-0">07 Jan 2019, 09:12AM</p>
-                      </div>
-                      <div class="align-self-center flex-grow text-right text-md-center text-xl-right py-md-2 py-xl-0">
-                        <h6 class="font-weight-bold mb-0">$236</h6>
-                      </div>
-                    </div>
-                    <div class="bg-gray-dark d-flex d-md-block d-xl-flex flex-row py-3 px-4 px-md-3 px-xl-4 rounded mt-3">
-                      <div class="text-md-center text-xl-left">
-                        <h6 class="mb-1">Tranfer to Stripe</h6>
-                        <p class="text-muted mb-0">07 Jan 2019, 09:12AM</p>
-                      </div>
-                      <div class="align-self-center flex-grow text-right text-md-center text-xl-right py-md-2 py-xl-0">
-                        <h6 class="font-weight-bold mb-0">$593</h6>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+  <div class="card">
+    <div class="card-body">
+      <h4 class="card-title">Top 5 Sold Medicines</h4>
+
+      <?php if (!empty($top_medicines)): ?>
+        <!-- Pie Chart -->
+        <canvas id="topMedicinesChart" style="height:300px;"></canvas>
+      <?php else: ?>
+        <p class="text-muted">No sales data available</p>
+      <?php endif; ?>
+    </div>
+  </div>
+</div>
+<!-- Load Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  <?php if (!empty($top_medicines)): ?>
+  const labels = <?= json_encode(array_column($top_medicines, 'medicine_name')); ?>;
+  const data = <?= json_encode(array_column($top_medicines, 'total_sold')); ?>;
+
+  const ctx = document.getElementById('topMedicinesChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Top 5 Medicines',
+        data: data,
+        backgroundColor: [
+          '#3b82f6', // Blue
+          '#f59e0b', // Amber
+          '#10b981', // Green
+          '#ef4444', // Red
+          '#8b5cf6'  // Purple
+        ],
+        borderWidth: 1,
+        borderColor: '#fff'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: '#efe9f4',
+            font: {
+              size: 14,
+              weight: 'bold'
+            }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return context.label + ': ' + context.formattedValue + ' pcs';
+            }
+          }
+        }
+      }
+    }
+  });
+  <?php endif; ?>
+</script>
+
+              <!-- -----------------------End product chart---------------------- -->
               <div class="col-md-8 grid-margin stretch-card">
                 <div class="card">
                   <div class="card-body">
@@ -646,4 +712,5 @@
             </div>
           </div>
           <!-- content-wrapper ends -->
+           
          <?php include "../includes/footer.php"  ?>

@@ -1,4 +1,13 @@
 <?php
+include "../includes/header.php";
+include "../includes/sidebar.php";
+?>
+<div class="container-fluid page-body-wrapper">
+  <?php include "../includes/navbar.php"; ?>
+
+  <div class="main-panel">
+    <div class="content-wrapper">
+<?php
 include "../includes/dbconnection.php";
 $popup = false;
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -11,57 +20,73 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $role = $_POST['role'];
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
-    // Handle image upload
-    // Handle image upload
-$imageName = $_FILES['image']['name'];
-$imageTmp = $_FILES['image']['tmp_name'];
-$imageExt = strtolower(pathinfo($imageName, PATHINFO_EXTENSION));
+    // --- Check username exists ---
+    $checkUser = $conn->prepare("SELECT id FROM pharmacist WHERE username = ?");
+    $checkUser->bind_param("s", $username);
+    $checkUser->execute();
+    $checkUser->store_result();
 
-// Allowed file types
-$allowedExt = ['jpg', 'jpeg', 'png', 'gif'];
-
-// Rename file to avoid overwriting
-$newImageName = uniqid("IMG_", true) . '.' . $imageExt;
-$imageFolder = "uploads/" . $newImageName;
-
-if (!is_dir("uploads")) {
-    mkdir("uploads", 0777, true);
-}
-
-if (in_array($imageExt, $allowedExt) && $_FILES['image']['size'] <= 2 * 1024 * 1024) {
-    if (move_uploaded_file($imageTmp, $imageFolder)) {
-        // Insert with the new image name
-        $stmt = $conn->prepare("INSERT INTO pharmacist (fullname, username, email, phone, branch, password, role_name, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("ssssssss", $fullname, $username, $email, $phone, $branch, $password, $role, $newImageName);
-
-
-        if ($stmt->execute()) {
-            $popup = true;
-        } else {
-            echo "<p style='color:red;'>Error: " . $stmt->error . "</p>";
-        }
-        $stmt->close();
+    if ($checkUser->num_rows > 0) {
+        echo "<p style='color:red; text-align:center;'>The username already exists!</p>";
+        $checkUser->close();
     } else {
-        echo "<p style='color:red;'>Image upload failed!</p>";
-    }
-} else {
-    echo "<p style='color:red;'>Invalid file type or file too large (Max: 2MB)</p>";
-}
+        $checkUser->close();
 
+        // --- Check email exists ---
+        $checkEmail = $conn->prepare("SELECT id FROM pharmacist WHERE email = ?");
+        $checkEmail->bind_param("s", $email);
+        $checkEmail->execute();
+        $checkEmail->store_result();
+
+        if ($checkEmail->num_rows > 0) {
+            echo "<p style='color:red; text-align:center;'>The email address already exists!</p>";
+            $checkEmail->close();
+        } else {
+            $checkEmail->close();
+
+            // Handle image upload
+            $imageName = $_FILES['image']['name'];
+            $imageTmp = $_FILES['image']['tmp_name'];
+            $imageExt = strtolower(pathinfo($imageName, PATHINFO_EXTENSION));
+
+            // Allowed file types
+            $allowedExt = ['jpg', 'jpeg', 'png', 'gif'];
+
+            // Rename file to avoid overwriting
+            $newImageName = uniqid("IMG_", true) . '.' . $imageExt;
+            $imageFolder = "uploads/" . $newImageName;
+
+            if (!is_dir("uploads")) {
+                mkdir("uploads", 0777, true);
+            }
+
+            if (in_array($imageExt, $allowedExt) && $_FILES['image']['size'] <= 2 * 1024 * 1024) {
+                if (move_uploaded_file($imageTmp, $imageFolder)) {
+                    // Insert with the new image name
+                    $stmt = $conn->prepare("INSERT INTO pharmacist (fullname, username, email, phone, branch, password, role_name, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt->bind_param("ssssssss", $fullname, $username, $email, $phone, $branch, $password, $role, $newImageName);
+
+                    if ($stmt->execute()) {
+                        $popup = true;
+                    } else {
+                        echo "<p style='color:red;'>Error: " . $stmt->error . "</p>";
+                    }
+                    $stmt->close();
+                } else {
+                    echo "<p style='color:red;'>Image upload failed!</p>";
+                }
+            } else {
+                echo "<p style='color:red;'>Invalid file type or file too large (Max: 2MB)</p>";
+            }
+        }
+    }
 }
 
 $conn->close();
 ?>
 
-<?php
-include "../includes/header.php";
-include "../includes/sidebar.php";
-?>
-<div class="container-fluid page-body-wrapper">
-  <?php include "../includes/navbar.php"; ?>
 
-  <div class="main-panel">
-    <div class="content-wrapper">
+
 <!-- contant area start----------------------------------------------------------------------------->
    
 <!DOCTYPE html>
@@ -262,26 +287,47 @@ input:focus, select:focus {
 
   <script>
 <?php if ($popup): ?>
-  // SweetAlert2 Popup (nice modern popup)
   window.onload = function() {
     Swal.fire({
+      title: '🏆 Successful!🏆',
+      text: 'Your user has been saved successfully.',
       icon: 'success',
-      title: 'User Added',
-      text: 'The user has been saved successfully!',
-      confirmButtonColor: '#4dabf7'
+      background: 'linear-gradient(135deg,#3a86ff 0%,#db00b6 100%)', 
+      color: '#fff',
+      confirmButtonText: 'Great!',
+      confirmButtonColor: '#072ac8',
+      showClass: {
+        popup: 'animate__animated animate__zoomIn'
+      },
+      hideClass: {
+        popup: 'animate__animated animate__zoomOut'
+      },
+      customClass: {
+        popup: 'rounded-3xl shadow-2xl p-6',
+        title: 'text-3xl font-bold',
+        confirmButton: 'px-6 py-2 rounded-full shadow-lg'
+      },
+      didOpen: () => {
+        const duration = 2 * 1000; // 2 seconds
+        const animationEnd = Date.now() + duration;
+        (function frame() {
+          confetti({
+            particleCount: 5,
+            startVelocity: 30,
+            spread: 360,
+            origin: { x: Math.random(), y: Math.random() - 0.2 }
+          });
+          if (Date.now() < animationEnd) {
+            requestAnimationFrame(frame);
+          }
+        })();
+      }
     }).then(() => {
-      // Reset form after OK
       document.getElementById("addUser").reset();
     });
   };
 <?php endif; ?>
 </script>
-
-<!-- SweetAlert2 CDN -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-
-
 <!-- contant area end----------------------------------------------------------------------------->
     </div> <!-- content-wrapper ends -->
 

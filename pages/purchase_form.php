@@ -1,17 +1,7 @@
 <?php
-    session_start();
-include "../includes/header.php";
-include "../includes/sidebar.php";
-?>
-<div class="container-fluid page-body-wrapper">
-  <?php include "../includes/navbar.php"; ?>
-
-  <div class="main-panel">
-    <div class="content-wrapper">
-<!------------------------------------- contant area start------------------------------------->
-<?php
 include "../includes/dbconnection.php";
-
+ session_start();
+$popup = false;
 // Fetch medicines
 $medicinesData = [];
 $medicines = $conn->query("SELECT id AS stock_id, medicine_name, sale_price, quantity FROM stock");
@@ -94,19 +84,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stock_stmt->close();
                 $update_stock = $conn->prepare("
                     UPDATE stock 
-                    SET quantity = ?, purchase_price = ?, sale_price = ?, expiry_date = ?, supplier_id = ?, medicine_type_id = ?
+                    SET quantity = ?, purchase_price = ?, sale_price = ?, expiry_date = ?
                     WHERE id = ?
                 ");
-                $update_stock->bind_param("iddsiii", $new_qty, $unit_price, $sale_price, $expiry_date, $supplier_id, $medicine_type_id, $stock_id);
+                $update_stock->bind_param("iddsi", $new_qty, $unit_price, $sale_price, $expiry_date, $stock_id);
                 $update_stock->execute();
                 $update_stock->close();
             } else {
                 $stock_stmt->close();
                 $insert_stock = $conn->prepare("
-                    INSERT INTO stock (medicine_name, medicine_type_id, quantity, purchase_price, sale_price, expiry_date, supplier_id)
+                    INSERT INTO stock (medicine_name, medicine_type_id, quantity, purchase_price, sale_price, expiry_date, supplier_name)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                 ");
-                $insert_stock->bind_param("siiddsi", $medicine_name, $medicine_type_id, $quantity, $unit_price, $sale_price, $expiry_date, $supplier_id);
+                $insert_stock->bind_param("siiddsi", $medicine_name, $medicine_type_id, $quantity, $unit_price, $sale_price, $expiry_date, $supplier_name);
                 $insert_stock->execute();
                 $stock_id = $insert_stock->insert_id;
                 $insert_stock->close();
@@ -123,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $conn->commit();
-        echo "<script>alert('Purchase successfully saved!'); window.location.href='purchase_form.php';</script>";
+        $popup = true;
 
     } catch (Exception $e) {
         $conn->rollback();
@@ -131,6 +121,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
+<?php
+include "../includes/header.php";
+include "../includes/sidebar.php";
+?>
+<div class="container-fluid page-body-wrapper">
+  <?php include "../includes/navbar.php"; ?>
+
+  <div class="main-panel">
+    <div class="content-wrapper">
+<!------------------------------------- contant area start------------------------------------->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -374,7 +375,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <button type="submit" class="submit-btn">Confirm Purchase</button>
     </form>
   </div>
-
+  <audio id="click">
+  <source src="../images/success.mp3" type="audio/mpeg">
+  </audio>
   <datalist id="medicineList">
     <?php foreach($medicinesData as $row): ?>
         <option value="<?= htmlspecialchars($row['medicine_name']); ?>" 
@@ -391,6 +394,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endforeach; ?>
   </datalist>
 
+<?php if (!empty($popup)): ?>
+<script>
+    document.getElementById('click').play();
+</script>
+<?php endif; ?>
+
+  <script>
+<?php if ($popup): ?>
+  window.onload = function() {
+    Swal.fire({
+      title: '🏆 Successful! 🏆',
+      text: 'Your purchase has been saved successfully.',
+      icon: 'success',
+      background: 'linear-gradient(135deg,#3a86ff 0%,#db00b6 100%)', 
+      color: '#fff',
+      confirmButtonText: 'Great!',
+      confirmButtonColor: '#072ac8',
+      showClass: {
+        popup: 'animate__animated animate__zoomIn'
+      },
+      hideClass: {
+        popup: 'animate__animated animate__zoomOut'
+      },
+      customClass: {
+        popup: 'rounded-3xl shadow-2xl p-6',
+        title: 'text-3xl font-bold',
+        confirmButton: 'px-6 py-2 rounded-full shadow-lg'
+      },
+      didOpen: () => {
+        const duration = 2 * 1000; // 2 seconds
+        const animationEnd = Date.now() + duration;
+        (function frame() {
+          confetti({
+            particleCount: 5,
+            startVelocity: 30,
+            spread: 360,
+            origin: { x: Math.random(), y: Math.random() - 0.2 }
+          });
+          if (Date.now() < animationEnd) {
+            requestAnimationFrame(frame);
+          }
+        })();
+      }
+    }).then(() => {
+      document.getElementById("purchaseForm").reset();
+    });
+  };
+<?php endif; ?>
+</script>
   <script>
     const medicines = <?= json_encode($medicinesData); ?>;
     class PurchaseForm {

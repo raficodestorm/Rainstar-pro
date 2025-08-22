@@ -7,11 +7,10 @@ if (!isset($_GET['sale_id'])) {
 }
 $sale_id = intval($_GET['sale_id']);
 
-// Fetch sale info
+// Fetch sale info (now including discount, net_total, paid_amount, due, status)
 $sale = $conn->query("
-    SELECT s.id, s.total_amount, s.sale_date, 
-           c.name AS customer_name, 
-           p.username AS pharmacist_name
+    SELECT s.id, s.total_amount, s.discount, s.net_total, s.paid_amount, s.due, s.status, s.sale_date, 
+           c.name AS customer_name, p.username AS pharmacist_name
     FROM sales s
     JOIN customers c ON s.customer_id = c.id
     JOIN pharmacist p ON s.pharmacist_id = p.id
@@ -21,92 +20,103 @@ $sale = $conn->query("
 // Fetch sale items
 $items = $conn->query("SELECT medicine, quantity, unit_price FROM sale_items WHERE sale_id = $sale_id");
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Invoice #<?= $sale['id']; ?></title>
+<title>Receipt #<?= $sale['id']; ?></title>
 <style>
-body { 
-    font-family: Arial, sans-serif; 
-}
-.invoice-box {
-     max-width: 800px; 
-     margin: auto; 
-     padding: 30px; 
-     border: 1px solid #eee; 
+    body {
+        font-family: 'Courier New', monospace; /* thermal printer look */
+        font-size: 14px;
+        line-height: 1.4;
+        color: #000;
     }
-h2 { 
-    text-align: center; 
-}
-table { 
-    width: 100%; 
-    border-collapse: collapse; 
-    margin-top: 20px; 
-}
-table, th, td { 
-    border: 1px solid #ccc; 
-    padding: 8px; 
-    text-align: left; 
-}
-tfoot td { 
-    font-weight: bold; 
-}
-.print-btn { 
-    margin: 20px auto; 
-    display: block; 
-    padding: 10px 20px; 
-    background: #28a745; 
-    color: white; 
-    border: none; 
-    cursor: pointer; 
-}
-img{
-    width: 60px;
-    height: 60px;
-    text-align: center;
-    margin-left: 360px;
-}
+    .center { text-align: center; }
+    .bold { font-weight: bold; }
+    .line { border-top: 1px dashed #000; margin: 5px 0; }
+    table { width: 100%; border-collapse: collapse; }
+    td { padding: 2px 0; }
+    .right { text-align: right; }
+    .left { text-align: left; }
+    .status-paid { color: green; font-weight: bold; }
+    .status-due { color: red; font-weight: bold; }
+    @media print {
+        .print-btn { display: none; }
+    }
 </style>
 </head>
 <body>
-<div class="invoice-box">
-    <img src="../images/rainstar.png" alt="">
-    <h2>Invoice</h2>
-    <p><strong>Invoice ID:</strong> <?= $sale['id']; ?></p>
-    <p><strong>Customer:</strong> <?= htmlspecialchars($sale['customer_name']); ?></p>
-    <p><strong>Pharmacist:</strong> <?= htmlspecialchars($sale['pharmacist_name']); ?></p>
-    <p><strong>Date:</strong> <?= $sale['sale_date']; ?></p>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Medicine</th>
-                <th>Qty</th>
-                <th>Unit Price</th>
-                <th>Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php while($row = $items->fetch_assoc()): ?>
-                <tr>
-                    <td><?= htmlspecialchars($row['medicine']); ?></td>
-                    <td><?= $row['quantity']; ?></td>
-                    <td><?= number_format($row['unit_price'], 2); ?></td>
-                    <td><?= number_format($row['quantity'] * $row['unit_price'], 2); ?></td>
-                </tr>
-            <?php endwhile; ?>
-        </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="3">Grand Total</td>
-                <td><?= number_format($sale['total_amount'], 2); ?></td>
-            </tr>
-        </tfoot>
-    </table>
+<div class="center bold">RainStar Pharma</div>
+<div class="center">Lalbag, Dhaka</div>
+<br>
+<div class="center bold">SALES RECEIPT</div>
+<br>
+
+Invoice ID: BRP<?= $sale['id']; ?><br>
+Customer: <?= htmlspecialchars($sale['customer_name']); ?><br>
+Pharmacist: <?= htmlspecialchars($sale['pharmacist_name']); ?><br>
+<table style="width:100%;">
+    <tr>
+        <td>Date: <?= date("d-m-Y", strtotime($sale['sale_date'])); ?></td>
+        <td class="right">Time: <?= date("h:i A", strtotime($sale['sale_date'])); ?></td>
+    </tr>
+</table>
+
+<div class="line"></div>
+<table>
+    <tr class="bold">
+        <td>SL</td>
+        <td>Description</td>
+        <td class="right">Qty</td>
+        <td class="right">Unit Price</td>
+        <td class="right">Amt</td>
+    </tr>
+    <?php 
+    $sl = 1;
+    $subtotal = 0;
+    while($row = $items->fetch_assoc()):
+        $total = $row['quantity'] * $row['unit_price'];
+        $subtotal += $total;
+    ?>
+    <tr>
+        <td><?= $sl++; ?></td>
+        <td><?= htmlspecialchars($row['medicine']); ?></td>
+        <td class="right"><?= $row['quantity']; ?></td>
+        <td class="right"><?= number_format($row['unit_price'], 2); ?></td>
+        <td class="right"><?= number_format($total, 2); ?></td>
+    </tr>
+    <?php endwhile; ?>
+</table>
+<div class="line"></div>
+
+<table>
+    <tr><td class="left">Subtotal</td><td class="right"><?= number_format($subtotal, 2); ?></td></tr>
+    <tr><td class="left">Discount</td><td class="right"><?= number_format($sale['discount'], 2); ?></td></tr>
+    <tr><td class="left">VAT</td><td class="right">0.00</td></tr>
+    <tr><td class="left">Rounding</td><td class="right">0.00</td></tr>
+</table>
+<div class="line"></div>
+
+<div class="bold">Net Total &nbsp;&nbsp;&nbsp;&nbsp; <?= number_format($sale['net_total'], 2); ?></div>
+<br>
+Payment Info: <?= ($sale['status'] == "Paid") ? '<span class="status-paid">PAID</span>' : '<span class="status-due">DUE</span>'; ?><br>
+Amount Paid: <?= number_format($sale['paid_amount'], 2); ?><br>
+Due Amount: <?= number_format($sale['due'], 2); ?><br>
+
+<div class="line"></div>
+<div style="font-size: 12px;">
+    ক্যাশমেমো ছাড়া বিক্রিত ঔষধ ফেরত এবং বিক্রির ১৫ দিন পর ঔষধ ফেরত বা পরিবর্তনকালে টাকা দেওয়া হয়না।<br>
+    ফ্রিজের আইটেম ও কাটা পাতার ঔষধ ফেরত বা পরিবর্তন করা হয় না।
+</div>
+<div class="line"></div>
+<div class="center">---------Software Developed by--------- <br> 
+                    ----------S A Rafi 01877100096---------
 </div>
 
-<button class="print-btn" onclick="window.print()">🖨 Print Invoice</button>
+<br>
+<button class="print-btn" onclick="window.print()">🖨 Print Receipt</button>
+
 </body>
 </html>

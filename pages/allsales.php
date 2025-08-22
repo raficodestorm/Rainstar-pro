@@ -13,80 +13,100 @@ include "../includes/sidebar.php";
  <!DOCTYPE html>
 <html>
 <head>
-    <title>Stock</title>
-    <style>
-    
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        background: #191d24;
-        box-shadow: 0 0 15px rgba(0,0,0,0.5);
-        border-radius: 8px;
-        overflow: hidden;
+  <title>Sales Record</title>
+  <style>
+    body { margin:0; padding:0; background:#111; }
+
+    /* Scroll container */
+    .table-wrap{
+      max-height: 70vh;        /* how tall you want the table area */
+      overflow: auto;          /* scrolling happens here */
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.5);
+      background: #191d24;
     }
 
-    th, td {
-        padding: 12px;
-        text-align: center;
-        border: 1px solid #333;
+    table{
+      width:100%;
+      border-collapse: separate; /* sticky-friendly */
+      border-spacing: 0;
     }
 
-    th {
-        background: #192bc2; /* Accent blue header */
-        color: #fff;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+    th, td{
+      padding:12px;
+      text-align:center;
+      border:1px solid #333;
     }
 
-    td {
-        background: #191d24;
-        color: #dcdcdc;
-    }
-    .stc-title{
-      text-align: center;
-      color: #007bff;
-      font-weight: bold;
-    }
-    tr:hover td{
-      background-color: black;
-      color: #ff4800;
-    }
-    tr:hover{
-        border-left: 4px solid #ff4800;
+    /* Sticky header */
+    thead th{
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background:#192bc2;
+      color:#fff;
+      text-transform:uppercase;
+      letter-spacing:1px;
     }
 
-</style>
+    td{ background:#191d24; color:#dcdcdc; }
 
+    .stc-title{ text-align:center; color:#007bff; font-weight:bold; }
+
+    tr:hover td{ background:black; color:#9ef01a; }
+    tr:hover { border-left:4px solid #9ef01a !important; }
+  </style>
 </head>
 <body>
 
-<div class="stc-title"><h2>Sales record</h2></div>
+<div class="stc-title"><h2>Sales Record</h2></div>
 
-<?php
-$result = $conn->query("SELECT * FROM sales");
-if ($result->num_rows > 0) {
-    echo "<table><tr>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
         <th>ID</th>
-        <th>Customer id</th>
-        <th>Pharmacist id</th>
-        <th>Total amount</th>
-        <th>Sale time</th>
-    </tr>";
-    while ($row = $result->fetch_assoc()) {
-        echo "<tr>
-            <td>{$row['id']}</td>
-            <td>{$row['customer_id']}</td>
-            <td>{$row['pharmacist_id']}</td>
-            <td>{$row['total_amount']}</td>
-            <td>{$row['sale_date']}</td>
-        </tr>";
-    }
-    echo "</table>";
-} else {
-    echo "<p>No records found.</p>";
-}
-$conn->close();
-?>
+        <th>Customer ID</th>
+        <th>Pharmacist ID</th>
+        <th>Subtotal</th>
+        <th>Discount</th>
+        <th>Net Total</th>
+        <th>Paid</th>
+        <th>Due</th>
+        <th>Status</th>
+        <th>Sale Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      <?php
+        $result = $conn->query("SELECT * FROM sales");
+        if ($result && $result->num_rows > 0) {
+          while ($row = $result->fetch_assoc()) {
+            echo "<tr>
+              <td>{$row['id']}</td>
+              <td>{$row['customer_id']}</td>
+              <td>{$row['pharmacist_id']}</td>
+              <td>{$row['total_amount']}</td>
+              <td>{$row['discount']}</td>
+              <td>{$row['net_total']}</td>
+              <td>{$row['paid_amount']}</td>
+              <td>{$row['due']}</td>
+              <td>{$row['status']}</td>
+              <td>{$row['sale_date']}</td>
+            </tr>";
+          }
+        } else {
+          echo '<tr><td colspan="5">No records found.</td></tr>';
+        }
+        $conn->close();
+      ?>
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>
+
 <!-- contant area end----------------------------------------------------------------------------->
     </div> <!-- content-wrapper ends -->
 

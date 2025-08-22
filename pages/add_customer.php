@@ -182,23 +182,47 @@ if (isset($_POST['addcustomer'])) {
 
   <script>
 <?php if ($popup): ?>
-  // SweetAlert2 Popup (nice modern popup)
   window.onload = function() {
     Swal.fire({
+      title: '🏆 Successful!🏆',
+      text: 'Your customer has been saved successfully.',
       icon: 'success',
-      title: 'Customer Added',
-      text: 'The customer has been saved successfully!',
-      confirmButtonColor: '#4dabf7'
+      background: 'linear-gradient(135deg,#3a86ff 0%,#db00b6 100%)', 
+      color: '#fff',
+      confirmButtonText: 'Great!',
+      confirmButtonColor: '#072ac8',
+      showClass: {
+        popup: 'animate__animated animate__zoomIn'
+      },
+      hideClass: {
+        popup: 'animate__animated animate__zoomOut'
+      },
+      customClass: {
+        popup: 'rounded-3xl shadow-2xl p-6',
+        title: 'text-3xl font-bold',
+        confirmButton: 'px-6 py-2 rounded-full shadow-lg'
+      },
+      didOpen: () => {
+        const duration = 2 * 1000; // 2 seconds
+        const animationEnd = Date.now() + duration;
+        (function frame() {
+          confetti({
+            particleCount: 5,
+            startVelocity: 30,
+            spread: 360,
+            origin: { x: Math.random(), y: Math.random() - 0.2 }
+          });
+          if (Date.now() < animationEnd) {
+            requestAnimationFrame(frame);
+          }
+        })();
+      }
     }).then(() => {
-      // Reset form after OK
       document.getElementById("addCustomerForm").reset();
     });
   };
 <?php endif; ?>
 </script>
-
-<!-- SweetAlert2 CDN -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 </body>
 
