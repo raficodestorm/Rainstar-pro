@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $conn->begin_transaction();
     try {
         // Sanitize input
-        $invoice_number   = trim($_POST['invoice_number']);
+       $invoice_number   = trim($_POST['invoice_number']);
         $supplier_name    = trim($_POST['supplier_name']);
         $total_amount     = floatval($_POST['total_amount']);
         $pharmacist_id    = $_SESSION['id'];
