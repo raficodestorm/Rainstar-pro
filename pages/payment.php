@@ -12,7 +12,7 @@ $sale = $conn->query("
     SELECT s.id, s.total_amount, s.sale_date, c.name AS customer_name, p.username AS pharmacist_name
     FROM sales s
     JOIN customers c ON s.customer_id = c.id
-    JOIN pharmacist p ON s.pharmacist_id = p.id
+    JOIN users p ON s.pharmacist_id = p.id
     WHERE s.id = $sale_id
 ")->fetch_assoc();
 

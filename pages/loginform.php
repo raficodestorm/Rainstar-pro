@@ -1,6 +1,43 @@
  <?php
-
 include "../includes/dbconnection.php";
+// Process login form
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $username = trim($_POST['username']);
+    $password = $_POST['password'];
+    $role = $_POST['role'];
+
+    $stmt = $conn->prepare("SELECT id, username, password, role_name FROM pharmacist WHERE username = ? AND role_name = ?");
+    $stmt->bind_param("ss", $username, $role);
+    $stmt->execute();
+    $stmt->store_result();
+
+    // If user exists
+    if ($stmt->num_rows > 0) {
+        $stmt->bind_result($id, $dbUsername, $dbPassword, $dbRole);
+        $stmt->fetch();
+
+        if (password_verify($password, $dbPassword)) {
+            session_start();
+            $_SESSION['id'] = $id;
+            $_SESSION['username'] = $dbUsername;
+            $_SESSION['role'] = $dbRole;
+            if ($dbRole == 'pharmacist') {
+                header("Location: pharmacist_dashboard.php");
+            } elseif ($dbRole == 'admin') {
+                header("Location: pharmacist_dashboard.php");
+            }
+            exit;
+        } else {
+            echo "<p style='color:red;'>Invalid password!</p>";
+        }
+    } else {
+        echo "<p style='color:red;'>No user found with that username and role!</p>";
+    }
+
+    $stmt->close();
+}
+
+$conn->close();
 ?>
 
 
@@ -32,7 +69,7 @@ include "../includes/dbconnection.php";
     border-radius: 12px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
     width: 100%;
-    max-width: 400px;
+    max-width: 450px;
     border: 1px solid rgba(255, 255, 255, 0.05);
   }
 
@@ -108,11 +145,24 @@ include "../includes/dbconnection.php";
     color: #60a5fa;
     text-decoration: underline;
   }
+  .title img{
+    width: 70px;
+    height: 70px;
+  }
+  .title p{
+    font-size: 40px;
+    font-weight: bold;
+    color: #0496ff;
+    text-align: center;
+  }
   </style>
 </head>
 <body>
 
   <div class="login-box">
+    <div class="title">
+      <p>RAINSTAR PHARMA</p>
+    </div>
     <h2>Login</h2>
     <form action="loginform.php" method="POST">
       <div class="form-group">
@@ -130,7 +180,7 @@ include "../includes/dbconnection.php";
         <select name="role" id="role" required>
           <option value="" disabled selected hidden>Select role</option>
           <option value="admin">Admin</option>
-          <option value="pharmacist">pharmacist</option>
+          <option value="pharmacist">Pharmacist</option>
         </select>
       </div>
 
@@ -146,47 +196,3 @@ include "../includes/dbconnection.php";
 </html>
 <?php
 
-// Process login form
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $username = trim($_POST['username']);
-    $password = $_POST['password'];
-    $role = $_POST['role'];
-
-    // Prepare and execute SQL query
-    $stmt = $conn->prepare("SELECT id, username, password, role_name FROM pharmacist WHERE username = ? AND role_name = ?");
-    $stmt->bind_param("ss", $username, $role);
-    $stmt->execute();
-    $stmt->store_result();
-
-    // If user exists
-    if ($stmt->num_rows > 0) {
-        $stmt->bind_result($id, $dbUsername, $dbPassword, $dbRole);
-        $stmt->fetch();
-
-        // Verify password
-        if (password_verify($password, $dbPassword)) {
-            session_start();
-            // Store user info in session
-            $_SESSION['id'] = $id;
-            $_SESSION['username'] = $dbUsername;
-            $_SESSION['role'] = $dbRole;
-
-            // Redirect based on role
-            if ($dbRole == 'pharmacist') {
-                header("Location: pharmacist_dashboard.php");
-            } elseif ($dbRole == 'admin') {
-                header("Location: pharmacist_dashboard.php");
-            }
-            exit;
-        } else {
-            echo "<p style='color:red;'>Invalid password!</p>";
-        }
-    } else {
-        echo "<p style='color:red;'>No user found with that username and role!</p>";
-    }
-
-    $stmt->close();
-}
-
-$conn->close();
-?>

@@ -21,7 +21,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
     // --- Check username exists ---
-    $checkUser = $conn->prepare("SELECT id FROM pharmacist WHERE username = ?");
+    $checkUser = $conn->prepare("SELECT id FROM users WHERE username = ?");
     $checkUser->bind_param("s", $username);
     $checkUser->execute();
     $checkUser->store_result();
@@ -33,7 +33,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $checkUser->close();
 
         // --- Check email exists ---
-        $checkEmail = $conn->prepare("SELECT id FROM pharmacist WHERE email = ?");
+        $checkEmail = $conn->prepare("SELECT id FROM users WHERE email = ?");
         $checkEmail->bind_param("s", $email);
         $checkEmail->execute();
         $checkEmail->store_result();
@@ -63,7 +63,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if (in_array($imageExt, $allowedExt) && $_FILES['image']['size'] <= 2 * 1024 * 1024) {
                 if (move_uploaded_file($imageTmp, $imageFolder)) {
                     // Insert with the new image name
-                    $stmt = $conn->prepare("INSERT INTO pharmacist (fullname, username, email, phone, branch, password, role_name, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt = $conn->prepare("INSERT INTO users (fullname, username, email, phone, branch, password, role_name, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
                     $stmt->bind_param("ssssssss", $fullname, $username, $email, $phone, $branch, $password, $role, $newImageName);
 
                     if ($stmt->execute()) {
@@ -84,8 +84,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 $conn->close();
 ?>
-
-
 
 <!-- contant area start----------------------------------------------------------------------------->
    
