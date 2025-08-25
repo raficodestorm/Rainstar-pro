@@ -6,7 +6,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $password = $_POST['password'];
     $role = $_POST['role'];
 
-    $stmt = $conn->prepare("SELECT id, username, password, role_name FROM pharmacist WHERE username = ? AND role_name = ?");
+    $stmt = $conn->prepare("SELECT id, username, password, role_name FROM users WHERE username = ? AND role_name = ?");
     $stmt->bind_param("ss", $username, $role);
     $stmt->execute();
     $stmt->store_result();

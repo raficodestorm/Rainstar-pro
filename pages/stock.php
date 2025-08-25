@@ -72,7 +72,7 @@ include "../includes/sidebar.php";
         <th>Pur-price</th>
         <th>Sale-price</th>
         <th>Expiry-date</th>
-        <th>Supplier-id</th>
+        <th>Supplier</th>
         <th>Stored at</th>
       </tr>
     </thead>
@@ -89,7 +89,7 @@ include "../includes/sidebar.php";
               <td>{$row['purchase_price']}</td>
               <td>{$row['sale_price']}</td>
               <td>{$row['expiry_date']}</td>
-              <td>{$row['supplier_id']}</td>
+              <td>{$row['supplier_name']}</td>
               <td>{$row['created_at']}</td>
             </tr>";
           }

@@ -77,7 +77,7 @@ CREATE TABLE sales (
     status VARCHAR(100),
     sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (customer_id) REFERENCES customers(id),
-    FOREIGN KEY (pharmacist_id) REFERENCES pharmacist(id)
+    FOREIGN KEY (pharmacist_id) REFERENCES users(id)
 );
 
 -- 8. Sale Items Table (Details of medicines sold in a sale)
