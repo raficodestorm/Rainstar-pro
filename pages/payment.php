@@ -26,25 +26,34 @@ while($row = $items->fetch_assoc()){
 $items = $conn->query("SELECT medicine, quantity, unit_price FROM sale_items WHERE sale_id = $sale_id");
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $discount      = floatval($_POST['discount']);
+    $discount_amount = floatval($_POST['discount_amount']);
+    $discount_percent = floatval($_POST['discount_percent']);
+
+    if ($discount_percent > 0) {
+        $discount_value = ($subtotal * $discount_percent) / 100; // numeric for calculation
+        $discount = $discount_percent . "%";                     // store "10%"
+    } else {
+        $discount_value = $discount_amount;
+        $discount = $discount_amount;                            // store flat value
+    }
+
     $paid_amount   = floatval($_POST['paid_amount']);
-    $net_total     = $subtotal - $discount;
+    $net_total     = $subtotal - $discount_value;  // calculation must use numeric value
     $due_amount    = max(0, $net_total - $paid_amount);
     $payment_method= $_POST['payment_method'];
 
-    // Payment status
     $status = ($due_amount <= 0) ? "Paid" : "Due";
 
-    // Update sales table only
+    // Now discount is VARCHAR, so use s instead of d in bind_param
     $stmt = $conn->prepare("UPDATE sales SET discount=?, net_total=?, paid_amount=?, due=?, status=? WHERE id=?");
-    $stmt->bind_param("dddssi", $discount, $net_total, $paid_amount, $due_amount, $status, $sale_id);
+    $stmt->bind_param("sddssi", $discount, $net_total, $paid_amount, $due_amount, $status, $sale_id);
     $stmt->execute();
     $stmt->close();
 
-    // Redirect to invoice page
     header("Location: invoice.php?sale_id=" . $sale_id);
     exit();
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -97,12 +106,26 @@ button:hover { background: linear-gradient(135deg, #0ea5e9, #2563eb); }
 }
 .table-dark th { background-color: #1e293b; color: #38bdf8; }
 .right { text-align: right; }
+.discount{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.dis{
+    padding-right: 20px;
+}
+#paid_amount{
+    width: 97%;
+}
+
 </style>
 <script>
 function updateDue() {
     let subtotal = parseFloat(<?= $subtotal; ?>);
-    let discount = parseFloat(document.getElementById('discount').value) || 0;
+    let discount_amount = parseFloat(document.getElementById('discount_amount').value) || 0;
+    let discount_percent = parseFloat(document.getElementById('discount_percent').value) || 0;
     let paid = parseFloat(document.getElementById('paid_amount').value) || 0;
+    let discount = discount_percent>0 ? (subtotal*discount_percent/100) : discount_amount;
     let net_total = subtotal - discount;
     let due = net_total - paid;
     document.getElementById('net_total').innerText = net_total.toFixed(2);
@@ -133,8 +156,16 @@ function updateDue() {
 </table>
 
 <form method="post">
-<label for="discount">Discount</label>
-<input type="number" step="0.01" name="discount" id="discount" value="0" oninput="updateDue()">
+<div class="discount">
+    <div class="dis">
+        <label for="discount_amount">Discount (৳)</label>
+        <input type="number" step="0.01" name="discount_amount" id="discount_amount" value="0" oninput="updateDue()" placeholder="৳">
+    </div>
+    <div class="dis">
+        <label for="discount_percent">Discount (%)</label>
+        <input type="number" step="0.01" name="discount_percent" id="discount_percent" value="0" oninput="updateDue()" placeholder="%">
+    </div>
+</div>
 
 <label for="paid_amount">Paid Amount</label>
 <input type="number" step="0.01" name="paid_amount" id="paid_amount" placeholder="Enter paid amount" oninput="updateDue()" required>

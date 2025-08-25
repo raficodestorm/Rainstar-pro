@@ -93,7 +93,7 @@ Pharmacist: <?= htmlspecialchars($sale['pharmacist_name']); ?><br>
 
 <table>
     <tr><td class="left">Subtotal</td><td class="right"><?= number_format($subtotal, 2); ?></td></tr>
-    <tr><td class="left">Discount</td><td class="right"><?= number_format($sale['discount'], 2); ?></td></tr>
+    <tr><td class="left">Discount</td><td class="right"><?= htmlspecialchars($sale['discount'], 2); ?></td></tr>
     <tr><td class="left">VAT</td><td class="right">0.00</td></tr>
     <tr><td class="left">Rounding</td><td class="right">0.00</td></tr>
 </table>

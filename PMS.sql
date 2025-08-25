@@ -148,6 +148,21 @@ CREATE TABLE expired_medicine (
     noted_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (stock_id) REFERENCES stock(id)
 );
+-- 14. expense Table 
+CREATE TABLE expense (
+    id INT AUTO_INCREMENT PRIMARY KEY, 
+    amount INT,
+    purpose VARCHAR(50),
+    description VARCHAR(200),
+    spent_by VARCHAR(100),
+    spent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+-- 15. expense Table 
+CREATE TABLE revenue (
+    id INT AUTO_INCREMENT PRIMARY KEY, 
+    amount INT,
+    Date DATE DEFAULT (CURRENT_DATE)
+);
 
 -- ------------------- Insert default roles---------------------------------------
 INSERT INTO role (role_name) VALUES ('admin'), ('pharmacist');
