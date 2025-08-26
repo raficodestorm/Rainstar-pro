@@ -41,8 +41,9 @@ $items = $conn->query("SELECT medicine, quantity, unit_price FROM sale_items WHE
     .left { text-align: left; }
     .status-paid { color: green; font-weight: bold; }
     .status-due { color: red; font-weight: bold; }
+    .btn{ display: flex; justify-content: space-between;}
     @media print {
-        .print-btn { display: none; }
+        .btn { display: none; }
     }
 </style>
 </head>
@@ -93,7 +94,7 @@ Pharmacist: <?= htmlspecialchars($sale['pharmacist_name']); ?><br>
 
 <table>
     <tr><td class="left">Subtotal</td><td class="right"><?= number_format($subtotal, 2); ?></td></tr>
-    <tr><td class="left">Discount</td><td class="right"><?= htmlspecialchars($sale['discount'], 2); ?></td></tr>
+    <tr><td class="left">Discount</td><td class="right"><?= number_format($sale['discount'], 2); ?></td></tr>
     <tr><td class="left">VAT</td><td class="right">0.00</td></tr>
     <tr><td class="left">Rounding</td><td class="right">0.00</td></tr>
 </table>
@@ -114,9 +115,11 @@ Due Amount: <?= number_format($sale['due'], 2); ?><br>
 <div class="center">---------Software Developed by--------- <br> 
                     ----------S A Rafi 01877100096---------
 </div>
-
 <br>
+<div class="btn">
+<button class="reset-btn" onclick="window.location.href = 'sale_form.php'">➕ New Sale</button>
 <button class="print-btn" onclick="window.print()">🖨 Print Receipt</button>
+</div>
 
 </body>
 </html>

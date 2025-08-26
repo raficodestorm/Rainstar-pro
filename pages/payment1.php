@@ -2,6 +2,19 @@
 session_start();
 include "../includes/dbconnection.php";
 
+// blank-page.php
+// Keeps header, sidebar, navbar and footer. Content area is intentionally empty.
+include "../includes/header.php";
+include "../includes/sidebar.php";
+?>
+<div class="container-fluid page-body-wrapper">
+  <?php include "../includes/navbar.php"; ?>
+
+  <div class="main-panel">
+    <div class="content-wrapper">
+<!-- contant area start----------------------------------------------------------------------------->
+<?php
+
 if (!isset($_GET['sale_id'])) {
     die("No sale ID provided");
 }
@@ -26,20 +39,10 @@ while($row = $items->fetch_assoc()){
 $items = $conn->query("SELECT medicine, quantity, unit_price FROM sale_items WHERE sale_id = $sale_id");
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $discount_amount = floatval($_POST['discount_amount']);
-    $discount_percent = floatval($_POST['discount_percent']);
-
-    if ($discount_percent > 0) {
-        $discount_value = ($subtotal * $discount_percent) / 100; // numeric for calculation
-        $discount = $discount_percent . "%";                     // store "10%"
-    } else {
-        $discount_value = $discount_amount;
-        $discount = $discount_amount;                            // store flat value
-    }
-
+    $discount = round($_POST['discount_amount']);
     $paid_amount   = floatval($_POST['paid_amount']);
-    $net_total     = $subtotal - $discount_value;  // calculation must use numeric value
-    $due_amount    = max(0, $net_total - $paid_amount);
+    $net_total     = round($subtotal - $discount);  
+    $due_amount    = round($net_total - $paid_amount);
     $payment_method= $_POST['payment_method'];
 
     $status = ($due_amount <= 0) ? "Paid" : "Due";
@@ -62,23 +65,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <meta charset="UTF-8">
 <title>Payment | RainStar Pharma</title>
 <style>
-body {
-    font-family: 'Poppins', sans-serif;
-    background-color: #0f172a;
-    color: #f1f5f9;
-    margin: 0; padding: 0;
-}
 .container {
     max-width: 750px;
-    margin: 40px auto;
-    background: #1e293b;
+    margin: auto;
+    background: #191d24;
     padding: 30px;
     border-radius: 15px;
     box-shadow: 0 0 25px rgba(0,0,0,0.5);
 }
-h2 { text-align: center; margin-bottom: 20px; color: #38bdf8; }
+h2 { text-align: center; margin-bottom: 20px; color: #f7ede2; }
 .summary {
-    background: #0f172a;
+    background: #212529;
     padding: 15px;
     border-radius: 10px;
     margin-bottom: 20px;
@@ -90,33 +87,33 @@ select, input {
     width: 100%; padding: 12px;
     border-radius: 10px; border: 1px solid #334155;
     margin-bottom: 20px;
-    background: #0f172a; color: #f1f5f9; font-size: 15px;
+    background: #212529; color: #f1f5f9; font-size: 15px;
 }
 select:focus, input:focus { outline: none; border-color: #38bdf8; }
-button {
+.submit_btn {
     width: 100%; padding: 14px; font-size: 16px;
     background: linear-gradient(135deg, #06b6d4, #3b82f6);
     color: #fff; border: none; border-radius: 12px; cursor: pointer; transition: 0.3s;
 }
-button:hover { background: linear-gradient(135deg, #0ea5e9, #2563eb); }
+.submit_btn:hover { background: linear-gradient(135deg, #0ea5e9, #2563eb); }
 .footer-note { text-align: center; margin-top: 15px; font-size: 12px; color: #64748b; }
 .table-dark { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
 .table-dark th, .table-dark td {
     border: 1px solid #334155; padding: 8px; text-align: left;
 }
-.table-dark th { background-color: #1e293b; color: #38bdf8; }
+.table-dark th { background-color: #1e293b; color: #38b000; }
 .right { text-align: right; }
 .discount{
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
 }
-.dis{
+/* .dis{
     padding-right: 20px;
 }
 #paid_amount{
     width: 97%;
-}
+} */
 
 </style>
 <script>
@@ -126,10 +123,11 @@ function updateDue() {
     let discount_percent = parseFloat(document.getElementById('discount_percent').value) || 0;
     let paid = parseFloat(document.getElementById('paid_amount').value) || 0;
     let discount = discount_percent>0 ? (subtotal*discount_percent/100) : discount_amount;
-    let net_total = subtotal - discount;
-    let due = net_total - paid;
-    document.getElementById('net_total').innerText = net_total.toFixed(2);
-    document.getElementById('due_amount').innerText = due.toFixed(2);
+    let net_total = Math.round(subtotal - discount);
+    let due = Math.round(net_total - paid);
+    document.getElementById('discount_amount').value = Math.round(discount);
+    document.getElementById('net_total').innerText = net_total;
+    document.getElementById('due_amount').innerText = due;
 }
 </script>
 </head>
@@ -158,12 +156,12 @@ function updateDue() {
 <form method="post">
 <div class="discount">
     <div class="dis">
-        <label for="discount_amount">Discount (৳)</label>
-        <input type="number" step="0.01" name="discount_amount" id="discount_amount" value="0" oninput="updateDue()" placeholder="৳">
-    </div>
-    <div class="dis">
         <label for="discount_percent">Discount (%)</label>
         <input type="number" step="0.01" name="discount_percent" id="discount_percent" value="0" oninput="updateDue()" placeholder="%">
+    </div>
+    <div class="dis">
+        <label for="discount_amount">Discount (৳)</label>
+        <input type="number" step="0.01" name="discount_amount" id="discount_amount" value="0" oninput="updateDue()" placeholder="৳">
     </div>
 </div>
 
@@ -177,12 +175,18 @@ function updateDue() {
     <option value="Mobile Banking">Mobile Banking</option>
 </select>
 
-<p><strong>Net Total:</strong> ৳<span id="net_total"><?= number_format($subtotal, 2); ?></span></p>
-<p><strong>Due Amount:</strong> ৳<span id="due_amount"><?= number_format($subtotal, 2); ?></span></p>
+<p><strong>Net Total:</strong> ৳<span id="net_total"><?= number_format($subtotal); ?></span></p>
+<p><strong>Due Amount:</strong> ৳<span id="due_amount"><?= number_format($subtotal); ?></span></p>
 
-<button type="submit">Confirm Payment</button>
+<button type="submit" class="submit_btn">Confirm Payment</button>
 </form>
 <div class="footer-note">RainStar Pharma - Secure Payment</div>
 </div>
 </body>
 </html>
+<!-- contant area end----------------------------------------------------------------------------->
+    </div> <!-- content-wrapper ends -->
+
+    <?php include "../includes/footer.php"; ?>
+  </div> <!-- main-panel ends -->
+</div> <!-- page-body-wrapper ends -->
