@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Insert purchase
         $purchase_stmt = $conn->prepare("
-            INSERT INTO purchases (invoice_number,supplier_id, supplier_name, total_amount, pharmacist_name) 
+            INSERT INTO purchases (invoice_no,supplier_id, supplier_name, total_amount, pharmacist_name) 
             VALUES (?, ?, ?, ?, ?)
         ");
         $purchase_stmt->bind_param("sisds", $invoice_number, $supp_id, $supplier_name, $total_amount, $pharmacist_name);
@@ -113,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $conn->commit();
-        $popup = true;
+        header("Location: purchase_payment.php?purchas_id=".$purchase_id);
 
     } catch (Exception $e) {
         $conn->rollback();

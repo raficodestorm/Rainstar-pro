@@ -108,10 +108,13 @@ CREATE TABLE return_items (
 -- 10. Purchases Table
 CREATE TABLE purchases (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    invoice_number VARCHAR(100),
+    invoice_no VARCHAR(100),
     supplier_id INT,
     supplier_name VARCHAR(100),
     total_amount DECIMAL(10,2),
+    paid_amount DECIMAL(10,2),
+    due DECIMAL(10,2),
+    status VARCHAR(100),
     pharmacist_name VARCHAR(100),
     purchase_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (supplier_id) REFERENCES supplier(id)
