@@ -14,9 +14,9 @@ include "../includes/sidebar.php";
     <div class="content-wrapper">
 <!-- contant area start----------------------------------------------------------------------------->
 <?php
-
+$popup = false;
 if (!isset($_GET['purchase_id'])) {
-    die("No sale ID provided");
+    die("No purchase ID provided");
 }
 $purchase_id = intval($_GET['purchase_id']);
 
@@ -38,22 +38,23 @@ while($row = $items->fetch_assoc()){
 }
 $items = $conn->query("SELECT medicine, quantity, unit_price FROM purchase_items WHERE purchase_id = $purchase_id");
 
+date_default_timezone_set('Asia/Dhaka');  
+$date = date("Y-m-d H:i:s");
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $discount = round($_POST['discount_amount']);
     $paid_amount   = floatval($_POST['paid_amount']);
-    $net_total     = round($subtotal - $discount);  
+    $total     = round($_POST['total']);  
     $due_amount    = round($net_total - $paid_amount);
     $payment_method= $_POST['payment_method'];
 
     $status = ($due_amount <= 0) ? "Paid" : "Due";
 
     // Now discount is VARCHAR, so use s instead of d in bind_param
-    $stmt = $conn->prepare("UPDATE sales SET discount=?, net_total=?, paid_amount=?, due=?, status=? WHERE id=?");
-    $stmt->bind_param("sddssi", $discount, $net_total, $paid_amount, $due_amount, $status, $sale_id);
+    $stmt = $conn->prepare("UPDATE purchases SET paid_amount=?, due=?, status=?, payment_date=? WHERE id=?");
+    $stmt->bind_param("dsssi", $paid_amount, $due_amount, $status, $date, $purchase_id);
     $stmt->execute();
     $stmt->close();
-
-    header("Location: invoice.php?sale_id=" . $sale_id);
+    $popup = true;
     exit();
 }
 
@@ -119,14 +120,10 @@ select:focus, input:focus { outline: none; border-color: #38bdf8; }
 <script>
 function updateDue() {
     let subtotal = parseFloat(<?= $subtotal; ?>);
-    let discount_amount = parseFloat(document.getElementById('discount_amount').value) || 0;
-    let discount_percent = parseFloat(document.getElementById('discount_percent').value) || 0;
     let paid = parseFloat(document.getElementById('paid_amount').value) || 0;
-    let discount = discount_percent>0 ? (subtotal*discount_percent/100) : discount_amount;
-    let net_total = Math.round(subtotal - discount);
-    let due = Math.round(net_total - paid);
-    document.getElementById('discount_amount').value = Math.round(discount);
-    document.getElementById('net_total').innerText = net_total;
+    let Grand_total = subtotal;
+    let due = Math.round(Grand_total - paid);
+    document.getElementById('net_total').innerText = Grand_total;
     document.getElementById('due_amount').innerText = due;
 }
 </script>
@@ -136,8 +133,8 @@ function updateDue() {
 <h2>💳 Payment</h2>
 
 <div class="summary">
-    <p><strong>Sale ID:</strong> BRP<?= $sale['id']; ?></p>
-    <p><strong>Customer:</strong> <?= htmlspecialchars($sale['customer_name']); ?></p>
+    <p><strong>Purchase ID:</strong> <?= $purchase['id']; ?></p>
+    <p><strong>Supplier:</strong> <?= htmlspecialchars($purchase['purchase_name']); ?></p>
     <p><strong>Subtotal:</strong> ৳<?= number_format($subtotal, 2); ?></p>
 </div>
 
@@ -153,17 +150,7 @@ function updateDue() {
 <?php endwhile; ?>
 </table>
 
-<form method="post">
-<div class="discount">
-    <div class="dis">
-        <label for="discount_percent">Discount (%)</label>
-        <input type="number" step="0.01" name="discount_percent" id="discount_percent" value="0" oninput="updateDue()" placeholder="%">
-    </div>
-    <div class="dis">
-        <label for="discount_amount">Discount (৳)</label>
-        <input type="number" step="0.01" name="discount_amount" id="discount_amount" value="0" oninput="updateDue()" placeholder="৳">
-    </div>
-</div>
+<form method="post" id="pay">
 
 <label for="paid_amount">Paid Amount</label>
 <input type="number" step="0.01" name="paid_amount" id="paid_amount" placeholder="Enter paid amount" oninput="updateDue()" required>
@@ -182,6 +169,61 @@ function updateDue() {
 </form>
 <div class="footer-note">RainStar Pharma - Secure Payment</div>
 </div>
+
+<audio id="click">
+  <source src="../images/success.mp3" type="audio/mpeg">
+</audio>
+<?php if (!empty($popup)) : ?>
+<script>
+    document.getElementById('click').play();
+</script>
+<?php endif; ?>
+
+  <script>
+<?php if ($popup): ?>
+  window.onload = function() {
+    Swal.fire({
+      title: '🏆 Successful!🏆',
+      text: 'Your payment has been completed successfully.',
+      icon: 'success',
+      background: 'linear-gradient(135deg,#3a86ff 0%,#db00b6 100%)', 
+      color: '#fff',
+      confirmButtonText: 'Great!',
+      confirmButtonColor: '#072ac8',
+      showClass: {
+        popup: 'animate__animated animate__zoomIn'
+      },
+      hideClass: {
+        popup: 'animate__animated animate__zoomOut'
+      },
+      customClass: {
+        popup: 'rounded-3xl shadow-2xl p-6',
+        title: 'text-3xl font-bold',
+        confirmButton: 'px-6 py-2 rounded-full shadow-lg'
+      },
+      didOpen: () => {
+        const duration = 2 * 1000; // 2 seconds
+        const animationEnd = Date.now() + duration;
+        (function frame() {
+          confetti({
+            particleCount: 5,
+            startVelocity: 30,
+            spread: 360,
+            origin: { x: Math.random(), y: Math.random() - 0.2 }
+          });
+          if (Date.now() < animationEnd) {
+            requestAnimationFrame(frame);
+          }
+        })();
+      }
+    }).then(() => {
+      document.getElementById("pay").reset();
+      window.location.href = "purchase_form.php";
+    });
+  };
+<?php endif; ?>
+</script>
+
 </body>
 </html>
 <!-- contant area end----------------------------------------------------------------------------->

@@ -18,9 +18,10 @@ CREATE TABLE users (
     branch TEXT,
     password VARCHAR(255) NOT NULL,
     role_name VARCHAR(100) NOT NULL,
-    image VARCHAR(255) NOT NULL,
+    image VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (role_name) REFERENCES role(role_name)
+    reset_otp VARCHAR(6),
+    otp_expiry DATETIME
 );
 
 -- 3. Supplier Table
@@ -117,6 +118,7 @@ CREATE TABLE purchases (
     status VARCHAR(100),
     pharmacist_name VARCHAR(100),
     purchase_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    payment_date DATETIME,
     FOREIGN KEY (supplier_id) REFERENCES supplier(id)
 );
 
@@ -125,6 +127,7 @@ CREATE TABLE purchase_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     purchase_id INT,
     stock_id INT,
+    medicine VARCHAR(100),
     quantity INT,
     unit_price DECIMAL(10,2),
     FOREIGN KEY (purchase_id) REFERENCES purchases(id),
@@ -168,7 +171,11 @@ CREATE TABLE revenue (
 );
 
 -- ------------------- Insert default roles---------------------------------------
-INSERT INTO role (role_name) VALUES ('admin'), ('pharmacist');
+INSERT INTO role (role_name) VALUES ('admin');
+INSERT INTO role (role_name) VALUES ('pharmacist');
+-- ------------------- Insert sample user---------------------------------------
+INSERT INTO users (fullname, username, email, phone, branch, password, role_name) VALUES ('Omar', 'omar', 'omar@gmail.com', 0124578552, 'Lalbag', 12345, 'admin');
+INSERT INTO users (fullname, username, email, phone, branch, password, role_name) VALUES ('Faruk', 'faruk', 'faruk@gmail.com', 0124578652, 'Lalbag', 12345, 'pharmacist');
 -- ------------------- Insert sample supplier---------------------------------------
 INSERT INTO supplier (name, contact_person, phone, email, address) 
 VALUES 

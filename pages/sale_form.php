@@ -310,7 +310,7 @@ include "../includes/sidebar.php";
     </div>
 
     <div class="sale-section-title">Medicines</div>
-    <div id="medicine-container"></div>
+    <div id="medicine-container">   </div>
     <button type="button" class="add-medicine-btn">+ Add Medicine</button>
 
     <div class="sale-form-group" style="margin-top:20px;">
