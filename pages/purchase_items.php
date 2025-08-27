@@ -13,7 +13,7 @@ include "../includes/sidebar.php";
  <!DOCTYPE html>
 <html>
 <head>
-  <title>Sales Record</title>
+  <title>Stock</title>
   <style>
     body { margin:0; padding:0; background:#111; }
 
@@ -38,12 +38,12 @@ include "../includes/sidebar.php";
       border:1px solid #333;
     }
 
-    /* Sticky header */
+    /* Sticky header inside the scroll container */
     thead th{
       position: sticky;
-      top: 0;
+      top: 0;                 /* if you have a fixed navbar, set this to its height */
       z-index: 2;
-      background:#192bc2;
+      background:#192bc2;     /* must have a bg so it doesn’t show rows under it */
       color:#fff;
       text-transform:uppercase;
       letter-spacing:1px;
@@ -53,74 +53,42 @@ include "../includes/sidebar.php";
 
     .stc-title{ text-align:center; color:#007bff; font-weight:bold; }
 
-    tr:hover td{ background:black; color:#9ef01a; }
-    tr:hover { border-left:4px solid #9ef01a !important; }
-    .status-btn {
-      padding: 5px 12px;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: bold;
-      text-transform: uppercase;
-      border: none;
-      cursor: default;
-    }
-
-    .status-paid {
-      background: #007bff; /* blue */
-      color: #fff;
-    }
-
-    .status-due {
-      background: #dc3545; /* red */
-      color: #fff;
-    }
-
+    tr:hover td{ background:black; color:#ff4800; }
+    tr:hover{ border-left:4px solid #ff4800; }
   </style>
 </head>
 <body>
 
-<div class="stc-title"><h2>Sales Record</h2></div>
+<div class="stc-title"><h2>purchase items record</h2></div>
 
 <div class="table-wrap">
   <table>
     <thead>
       <tr>
         <th>ID</th>
-        <th>Customer ID</th>
-        <th>Pharmacist ID</th>
-        <th>Subtotal</th>
-        <th>Discount</th>
-        <th>Net Total</th>
-        <th>Paid</th>
-        <th>Due</th>
-        <th>Status</th>
-        <th>Sale Date</th>
+        <th>Purchase id</th>
+        <th>Stock id</th>
+        <th>Medicine</th>
+        <th>Quantity</th>
+        <th>Unit Price</th>
       </tr>
     </thead>
     <tbody>
       <?php
-        $result = $conn->query("SELECT * FROM sales");
+        $result = $conn->query("SELECT * FROM purchase_items");
         if ($result && $result->num_rows > 0) {
           while ($row = $result->fetch_assoc()) {
-            $statusClass = ($row['status'] === 'Paid') ? 'status-paid' : 'status-due';
-            $statusText  = ($row['status'] === 'Paid') ? 'Paid' : 'Due';
-
             echo "<tr>
               <td>{$row['id']}</td>
-              <td>{$row['customer_id']}</td>
-              <td>{$row['pharmacist_id']}</td>
-              <td>{$row['total_amount']}</td>
-              <td>{$row['discount']}</td>
-              <td>{$row['net_total']}</td>
-              <td>{$row['paid_amount']}</td>
-              <td>{$row['due']}</td>
-              <td><span class='status-btn {$statusClass}'>{$statusText}</span></td>
-              <td>{$row['sale_date']}</td>
+              <td>{$row['purchase_id']}</td>
+              <td>{$row['stock_id']}</td>
+              <td>{$row['medicine']}</td>
+              <td>{$row['quantity']}</td>
+              <td>{$row['unit_price']}</td>
             </tr>";
-
           }
         } else {
-          echo '<tr><td colspan="5">No records found.</td></tr>';
+          echo '<tr><td colspan="6">No records found.</td></tr>';
         }
         $conn->close();
       ?>
@@ -130,6 +98,9 @@ include "../includes/sidebar.php";
 
 </body>
 </html>
+
+
+
 
 <!-- contant area end----------------------------------------------------------------------------->
     </div> <!-- content-wrapper ends -->

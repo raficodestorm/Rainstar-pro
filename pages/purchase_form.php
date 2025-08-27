@@ -105,9 +105,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Insert purchase item
             $item_stmt = $conn->prepare("
                 INSERT INTO purchase_items (purchase_id, stock_id, medicine, quantity, unit_price) 
-                VALUES (?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?)
             ");
-            $item_stmt->bind_param("iisid", $purchase_id, $stock_id, $medicine_name $quantity, $unit_price);
+            $item_stmt->bind_param("iisid", $purchase_id, $stock_id, $medicine_name, $quantity, $unit_price);
             $item_stmt->execute();
             $item_stmt->close();
         }

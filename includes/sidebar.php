@@ -121,13 +121,32 @@
             </ul>
           </li>
 
-          <li class="nav-item menu-items">
+          <li class="nav-item menu-items" id="menuadd">
             <a class="nav-link" href="#">
               <span class="menu-icon">
                 <i class="mdi mdi-speedometer"></i>
               </span>
               <span class="menu-title">Purchase History</span>
             </a>
+            <ul id="menuadd-sub">
+                <li>
+                  <a class="" href="all_purchase.php">
+                    <span class="">
+                      <i class="mdi mdi-speedometer"></i>
+                    </span>
+                    <span class="sub-text">All purchases</span>
+                  </a>
+              </li>
+
+              <li>
+                  <a class="" href="purchase_items.php">
+                    <span class="">
+                      <i class="mdi mdi-speedometer"></i>
+                    </span>
+                    <span class="sub-text">Purchase items</span>
+                  </a>
+              </li>
+            </ul>
           </li>
 
           <li class="nav-item menu-items">

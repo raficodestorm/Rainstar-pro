@@ -1,20 +1,6 @@
 <?php
 session_start();
 include "../includes/dbconnection.php";
-
-// blank-page.php
-// Keeps header, sidebar, navbar and footer. Content area is intentionally empty.
-include "../includes/header.php";
-include "../includes/sidebar.php";
-?>
-<div class="container-fluid page-body-wrapper">
-  <?php include "../includes/navbar.php"; ?>
-
-  <div class="main-panel">
-    <div class="content-wrapper">
-<!-- contant area start----------------------------------------------------------------------------->
-<?php
-
 if (!isset($_GET['sale_id'])) {
     die("No sale ID provided");
 }
@@ -56,8 +42,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     header("Location: invoice.php?sale_id=" . $sale_id);
     exit();
 }
-
+// blank-page.php
+// Keeps header, sidebar, navbar and footer. Content area is intentionally empty.
+include "../includes/header.php";
+include "../includes/sidebar.php";
 ?>
+<div class="container-fluid page-body-wrapper">
+  <?php include "../includes/navbar.php"; ?>
+
+  <div class="main-panel">
+    <div class="content-wrapper">
+<!-- contant area start----------------------------------------------------------------------------->
 
 <!DOCTYPE html>
 <html lang="en">

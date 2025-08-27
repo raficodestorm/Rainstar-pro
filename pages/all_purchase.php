@@ -55,6 +55,25 @@ include "../includes/sidebar.php";
 
     tr:hover td{ background:black; color:#9ef01a; }
     tr:hover { border-left:4px solid #9ef01a !important; }
+    .status-btn {
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: bold;
+      text-transform: uppercase;
+      border: none;
+      cursor: default;
+    }
+
+    .status-paid {
+      background: #007bff; /* blue */
+      color: #fff;
+    }
+
+    .status-due {
+      background: #dc3545; /* red */
+      color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -82,6 +101,8 @@ include "../includes/sidebar.php";
         $result = $conn->query("SELECT * FROM purchases");
         if ($result && $result->num_rows > 0) {
           while ($row = $result->fetch_assoc()) {
+            $statusClass = ($row['status'] === 'Paid') ? 'status-paid' : 'status-due';
+            $statusText  = ($row['status'] === 'Paid') ? 'Paid' : 'Due';
             echo "<tr>
               <td>{$row['id']}</td>
               <td>{$row['invoice_no']}</td>
@@ -90,7 +111,7 @@ include "../includes/sidebar.php";
               <td>{$row['total_amount']}</td>
               <td>{$row['paid_amount']}</td>
               <td>{$row['due']}</td>
-              <td>{$row['status']}</td>
+              <td><span class='status-btn {$statusClass}'>{$statusText}</span></td>
               <td>{$row['pharmacist_name']}</td>
               <td>{$row['purchase_date']}</td>
             </tr>";
