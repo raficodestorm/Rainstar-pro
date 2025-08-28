@@ -1,8 +1,10 @@
 <?php
 include "../includes/dbconnection.php";
-
-// Fetch top 5 sold medicines
-$sql = "
+session_start();
+$pharmacist_id = $_SESSION['id'];
+$pharmacist_name = $_SESSION['username'];
+// ---------------Fetch top 5 sold medicines--------------------------
+$items = "
     SELECT s.medicine_name AS medicine_name, 
            SUM(sd.quantity) AS total_sold, 
            s.sale_price AS unit_price, 
@@ -13,12 +15,40 @@ $sql = "
     ORDER BY total_sold DESC
     LIMIT 5
 ";
-$result = $conn->query($sql);
+$result = $conn->query($items);
 $top_medicines = [];
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         $top_medicines[] = $row;
     }
+}
+// ---------------Fetch sales amount--------------------------
+$sales = "
+    SELECT SUM(net_total) as today_net_total
+    FROM sales
+    WHERE pharmacist_id = $pharmacist_id 
+      AND DATE(sale_date) = CURDATE()
+";
+
+$sales_result = $conn->query($sales);
+$today_sale_total = 0;
+
+if ($sales_result && $row = $sales_result->fetch_assoc()) {
+  $today_sale_total = $row['today_net_total'] ?? 0;
+}
+// ---------------Fetch purchase amount--------------------------
+$purchases = "
+    SELECT SUM(total_amount) as today_purchase_total
+    FROM purchases
+    WHERE pharmacist_name = '$pharmacist_name' 
+      AND DATE(purchase_date) = CURDATE()
+";
+
+$purchases_result = $conn->query($purchases);
+$today_purchase_total = 0;
+
+if ($purchases_result && $row = $purchases_result->fetch_assoc()) {
+    $today_purchase_total = $row['today_purchase_total'] ?? 0;
 }
 ?>
 
@@ -37,8 +67,7 @@ if ($result && $result->num_rows > 0) {
                     <div class="row">
                       <div class="col-9">
                         <div class="d-flex align-items-center align-self-start">
-                          <h3 class="mb-0">$12.34</h3>
-                          <p class="text-success ml-2 mb-0 font-weight-medium">+3.5%</p>
+                          <h3 class="mb-0">৳ <?php echo $today_sale_total; ?></h3>
                         </div>
                       </div>
                       <div class="col-3">
@@ -47,7 +76,7 @@ if ($result && $result->num_rows > 0) {
                         </div>
                       </div>
                     </div>
-                    <h6 class="text-muted font-weight-normal">Potential growth</h6>
+                    <h6 class="text-muted font-weight-normal">Daily sales</h6>
                   </div>
                 </div>
               </div>
@@ -57,17 +86,16 @@ if ($result && $result->num_rows > 0) {
                     <div class="row">
                       <div class="col-9">
                         <div class="d-flex align-items-center align-self-start">
-                          <h3 class="mb-0">$17.34</h3>
-                          <p class="text-success ml-2 mb-0 font-weight-medium">+11%</p>
+                          <h3 class="mb-0">৳ <?php echo $today_purchase_total; ?></h3>
                         </div>
                       </div>
                       <div class="col-3">
-                        <div class="icon icon-box-success">
+                      <div class="icon icon-box-danger">
                           <span class="mdi mdi-arrow-top-right icon-item"></span>
                         </div>
                       </div>
                     </div>
-                    <h6 class="text-muted font-weight-normal">Revenue current</h6>
+                    <h6 class="text-muted font-weight-normal">Daily purchases</h6>
                   </div>
                 </div>
               </div>
@@ -87,7 +115,7 @@ if ($result && $result->num_rows > 0) {
                         </div>
                       </div>
                     </div>
-                    <h6 class="text-muted font-weight-normal">Daily Income</h6>
+                    <h6 class="text-muted font-weight-normal">Daily expense</h6>
                   </div>
                 </div>
               </div>
@@ -107,7 +135,7 @@ if ($result && $result->num_rows > 0) {
                         </div>
                       </div>
                     </div>
-                    <h6 class="text-muted font-weight-normal">Expense current</h6>
+                    <h6 class="text-muted font-weight-normal">Daily income</h6>
                   </div>
                 </div>
               </div>
@@ -144,14 +172,14 @@ if ($result && $result->num_rows > 0) {
         label: 'Top 5 Medicines',
         data: data,
         backgroundColor: [
-          '#3b82f6', // Blue
-          '#f59e0b', // Amber
-          '#10b981', // Green
-          '#ef4444', // Red
-          '#8b5cf6'  // Purple
+          '#004fff', // Blue
+          '#38b000', // Amber
+          '#8900f2', // Green
+          '#b21e35', // Red
+          '#dcd6f7'  // Purple
         ],
         borderWidth: 1,
-        borderColor: '#fff'
+        borderColor: '#17ffc4'
       }]
     },
     options: {
