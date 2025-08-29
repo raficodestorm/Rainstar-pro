@@ -1,4 +1,7 @@
-       
+<?php
+require_once "../includes/config.php"; 
+require_once "../includes/dbconnection.php"; 
+?>
  <!-- partial:partials/_navbar.html -->
         <nav class="navbar p-0 fixed-top d-flex flex-row">
           <div class="navbar-brand-wrapper d-flex d-lg-none align-items-center justify-content-center">
@@ -141,8 +144,16 @@
               <li class="nav-item dropdown">
                 <a class="nav-link" id="profileDropdown" href="#" data-toggle="dropdown">
                   <div class="navbar-profile">
-                    <img class="img-xs rounded-circle" src="../images/rafi.png" alt="">
-                    <p class="mb-0 d-none d-sm-block navbar-profile-name">S A Rafi</p>
+                    <?php if (!empty($_SESSION['image'])): ?>
+                        <img class="img-xs rounded-circle" 
+                            src="uploads/<?php echo htmlspecialchars($_SESSION['image']); ?>" 
+                            alt="img">
+                    <?php else: ?>
+                        <img class="img-xs rounded-circle" 
+                            src="uploads/default.png" 
+                            alt="Default">
+                    <?php endif; ?>
+                    <p class="mb-0 d-none d-sm-block navbar-profile-name"><?php echo $pharmacist_name ?></p>
                     <i class="mdi mdi-menu-down d-none d-sm-block"></i>
                   </div>
                 </a>

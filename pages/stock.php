@@ -1,6 +1,7 @@
 <?php
-// blank-page.php
-// Keeps header, sidebar, navbar and footer. Content area is intentionally empty.
+require_once "../includes/config.php"; 
+require_once "../includes/dbconnection.php"; 
+
 include "../includes/header.php";
 include "../includes/sidebar.php";
 ?>
@@ -69,16 +70,16 @@ include "../includes/sidebar.php";
         <th>Med-name</th>
         <th>Med-type-id</th>
         <th>Quantity</th>
-        <th>Pur-price</th>
         <th>Sale-price</th>
-        <th>Expiry-date</th>
+        <th>Exp-date</th>
         <th>Supplier</th>
         <th>Stored at</th>
+        <th>pharmacist id</th>
       </tr>
     </thead>
     <tbody>
       <?php
-        $result = $conn->query("SELECT * FROM stock");
+        $result = $conn->query("SELECT * FROM stock WHERE pharmacist_id = $pharmacist_id");
         if ($result && $result->num_rows > 0) {
           while ($row = $result->fetch_assoc()) {
             echo "<tr>
@@ -86,11 +87,11 @@ include "../includes/sidebar.php";
               <td>{$row['medicine_name']}</td>
               <td>{$row['medicine_type_id']}</td>
               <td>{$row['quantity']}</td>
-              <td>{$row['purchase_price']}</td>
               <td>{$row['sale_price']}</td>
               <td>{$row['expiry_date']}</td>
               <td>{$row['supplier_name']}</td>
               <td>{$row['created_at']}</td>
+              <td>{$row['pharmacist_id']}</td>
             </tr>";
           }
         } else {

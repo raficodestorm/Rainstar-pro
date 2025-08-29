@@ -1,11 +1,10 @@
 <?php
-session_start();
-include "../includes/dbconnection.php";
+require_once "../includes/config.php"; 
+require_once "../includes/dbconnection.php"; 
 
-    
     // Fetch medicines
     $medicinesData = [];
-    $medicines = $conn->query("SELECT id AS stock_id, medicine_name, sale_price, quantity FROM stock");
+    $medicines = $conn->query("SELECT id AS stock_id, medicine_name, purchase_price, sale_price, quantity FROM stock WHERE pharmacist_id = $pharmacist_id");
     while ($row = $medicines->fetch_assoc()) {
         $medicinesData[] = $row;
     }
@@ -21,12 +20,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $medicines = $_POST['medicine_name'];
     $quantities = $_POST['quantity'];
     $prices = $_POST['sale_price'];
-
-    // 1. Get pharmacist ID from session
-    if (!isset($_SESSION['id'])) {
-        die("Error: No pharmacist logged in.");
-    }
-    $pharmacist_id = $_SESSION['id'];
 
     // 2. Find customer ID from name
     $stmt = $conn->prepare("SELECT id FROM customers WHERE name = ?");
@@ -67,8 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $unit_price = $prices[$i];
 
             // Check stock
-            $stmt = $conn->prepare("SELECT quantity FROM stock WHERE id = ?");
-            $stmt->bind_param("i", $stk_id);
+            $stmt = $conn->prepare("SELECT quantity FROM stock WHERE id = ? AND pharmacist_id = ?");
+            $stmt->bind_param("ii", $stk_id, $pharmacist_id);
             $stmt->execute();
             $stock = $stmt->get_result()->fetch_assoc();
             if (!$stock) {
@@ -79,8 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // Insert sale item
-            $stmt = $conn->prepare("INSERT INTO sale_items (sale_id, stock_id, medicine, quantity, unit_price) VALUES (?, ?, ?, ?, ?)");
-            $stmt->bind_param("iisid", $sale_id, $stk_id, $med_name, $qty, $unit_price);
+            $stmt = $conn->prepare("INSERT INTO sale_items (sale_id, stock_id, medicine, quantity, unit_price, pharmacist_id) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("iisidi", $sale_id, $stk_id, $med_name, $qty, $unit_price, $pharmacist_id);
             if (!$stmt->execute()) {
                 throw new Exception("Execute failed for sale_items: " . $stmt->error);
             }
@@ -91,7 +84,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!$stmt->execute()) {
                 throw new Exception("Execute failed for stock UPDATE: " . $stmt->error);
             }
+            //  Calculate revenue (profit) for this item
+            $purch_stmt = $conn->prepare("SELECT purchase_price FROM stock WHERE pharmacist_id = ? AND medicine_name = ?");
+            $purch_stmt->bind_param("is", $pharmacist_id, $med_name);
+            $purch_stmt->execute();
+            $purch_result = $purch_stmt->get_result();
+
+            if ($purch_result->num_rows > 0) {
+                while($row = $purch_result->fetch_assoc()){
+                    $p_price = $row['purchase_price'];
+                    $profit = ($unit_price - $p_price) * $qty;
+                    $total_revenue += $profit;                
+                }
+            }
+
         }
+
+                $revenue = "
+                    SELECT date
+                    FROM revenue
+                    WHERE pharmacist_id = $pharmacist_id 
+                    AND DATE(date) = CURDATE()
+                ";
+                $revenue_result = $conn->query($revenue);
+                if($revenue_result && $revenue_result->num_rows > 0) {
+                    $rev = $conn->prepare('UPDATE revenue SET amount = amount+? WHERE pharmacist_id = ? AND DATE(date) = CURDATE()');
+                    $rev->bind_param('di', $total_revenue, $pharmacist_id);
+                    if (!$rev->execute()) {
+                        throw new Exception("Execute failed for revenue: " . $rev->error);
+                    }
+                } else {
+                    $reven = $conn->prepare("INSERT INTO revenue (amount, pharmacist_id) VALUES (?, ?)");
+                    $reven->bind_param('di', $total_revenue, $pharmacist_id);
+                    if (!$reven->execute()) {
+                    throw new Exception("Execute failed for revenue: " . $reven->error);
+                }
+            }
 
         $conn->commit();
         header("Location: payment1.php?sale_id=" . $sale_id);

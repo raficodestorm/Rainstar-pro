@@ -1,6 +1,7 @@
 <?php
-// blank-page.php
-// Keeps header, sidebar, navbar and footer. Content area is intentionally empty.
+require_once "../includes/config.php"; 
+require_once "../includes/dbconnection.php"; 
+
 include "../includes/header.php";
 include "../includes/sidebar.php";
 ?>
@@ -99,7 +100,7 @@ include "../includes/sidebar.php";
     </thead>
     <tbody>
       <?php
-        $result = $conn->query("SELECT * FROM sales");
+        $result = $conn->query("SELECT * FROM sales WHERE pharmacist_id = $pharmacist_id");
         if ($result && $result->num_rows > 0) {
           while ($row = $result->fetch_assoc()) {
             $statusClass = ($row['status'] === 'Paid') ? 'status-paid' : 'status-due';

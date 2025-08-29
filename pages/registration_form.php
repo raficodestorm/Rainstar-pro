@@ -1,4 +1,6 @@
 <?php
+require_once "../includes/config.php"; 
+require_once "../includes/dbconnection.php"; 
 include "../includes/header.php";
 include "../includes/sidebar.php";
 ?>
@@ -8,7 +10,6 @@ include "../includes/sidebar.php";
   <div class="main-panel">
     <div class="content-wrapper">
 <?php
-include "../includes/dbconnection.php";
 $popup = false;
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Get and sanitize form values

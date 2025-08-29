@@ -52,6 +52,7 @@ CREATE TABLE stock (
     expiry_date DATE,
     supplier_name VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    pharmacist_id INT,
     FOREIGN KEY (medicine_type_id) REFERENCES medicine_type(id)
 );
 
@@ -89,6 +90,7 @@ CREATE TABLE sale_items (
     medicine VARCHAR(100),
     quantity INT NOT NULL,
     unit_price DECIMAL(10,2) NOT NULL,
+    pharmacist_id INT,
     FOREIGN KEY (sale_id) REFERENCES sales(id),
     FOREIGN KEY (stock_id) REFERENCES stock(id)
 );
@@ -130,6 +132,7 @@ CREATE TABLE purchase_items (
     medicine VARCHAR(100),
     quantity INT,
     unit_price DECIMAL(10,2),
+    pharmacist_id INT,
     FOREIGN KEY (purchase_id) REFERENCES purchases(id),
     FOREIGN KEY (stock_id) REFERENCES stock(id)
 );
@@ -165,7 +168,8 @@ CREATE TABLE expense (
 );
 -- 15. expense Table 
 CREATE TABLE revenue (
-    id INT AUTO_INCREMENT PRIMARY KEY, 
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    pharmacist_id VARCHAR(10) NOT NULL, 
     amount INT,
     Date DATE DEFAULT (CURRENT_DATE)
 );

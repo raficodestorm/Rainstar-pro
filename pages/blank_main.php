@@ -1,6 +1,4 @@
 <?php
-// blank-page.php
-// Keeps header, sidebar, navbar and footer. Content area is intentionally empty.
 include "../includes/header.php";
 include "../includes/sidebar.php";
 ?>

@@ -11,17 +11,16 @@ include "../includes/sidebar.php";
   <div class="main-panel">
     <div class="content-wrapper">
 <!-- contant area start----------------------------------------------------------------------------->
-<?php
+   <?php
 $popup = false; // default no popup
 
-if (isset($_POST['addcustomer'])) {
-    $name  = $_POST['name'];
-    $phone = $_POST['phone'];
-    $email = $_POST['email'];
-    $addr  = $_POST['address'];
-    
-    $customer = $conn->prepare("INSERT INTO customers(name, email, phone, address) VALUES(?, ?, ?, ?)");
-    $customer->bind_param("ssss", $name, $email, $phone, $addr);
+if (isset($_POST['expense'])) {
+    $amount  = $_POST['expense_amount'];
+    $purpose = $_POST['purpose'];
+    $description = $_POST['description'];
+
+    $customer = $conn->prepare("INSERT INTO expense(amount, purpose, description, spent_by) VALUES(?, ?, ?, ?)");
+    $customer->bind_param("dsss", $amount, $purpose, $description, $phamacist);
 
     if ($customer->execute()) {
         $popup = true;
@@ -35,7 +34,7 @@ if (isset($_POST['addcustomer'])) {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Add Regular Customer</title>
+  <title>Expense</title>
   <style>
     * {
       margin: 0;
@@ -145,29 +144,24 @@ if (isset($_POST['addcustomer'])) {
 </head>
 <body>
   <div class="form-container">
-    <h2>Add Regular Customer</h2>
-    <form id="addCustomerForm" method="POST">
+    <h2>Expense Entry</h2>
+    <form id="expense" method="POST">
       <div class="form-group">
-        <label for="customer-name">Customer Name</label>
-        <input type="text" id="customer-name" name="name" required placeholder="Enter full name">
+        <label for="expense_amount">Expense amount:</label>
+        <input type="number" id="expense_amount" name="expense_amount" required placeholder="Enter amount">
       </div>
 
       <div class="form-group">
-        <label for="phone">Phone Number</label>
-        <input type="tel" id="phone" name="phone" required placeholder="Enter phone number">
+        <label for="purpose">Purpose:</label>
+        <input type="text" id="purpose" name="purpose" required placeholder="Enter the purpose of expense">
       </div>
 
       <div class="form-group">
-        <label for="email">Email Address</label>
-        <input type="email" id="email" name="email" placeholder="Enter email address">
+        <label for="description">Description:</label>
+        <input type="text" id="description" name="description" placeholder="description">
       </div>
 
-      <div class="form-group">
-        <label for="address">Address</label>
-        <textarea id="address" name="address" rows="3" placeholder="Enter customer address" required></textarea>
-      </div>
-
-      <button type="submit" class="submit-btn"  name="addcustomer">Add Customer</button>
+      <button type="submit" class="submit-btn"  name="expense">Submit</button>
     </form>
   </div>
   <audio id="click">
@@ -184,7 +178,7 @@ if (isset($_POST['addcustomer'])) {
   window.onload = function() {
     Swal.fire({
       title: '🏆 Successful!🏆',
-      text: 'Your customer has been saved successfully.',
+      text: 'Your expense has been saved successfully.',
       icon: 'success',
       background: 'linear-gradient(135deg,#3a86ff 0%,#db00b6 100%)', 
       color: '#fff',
@@ -217,7 +211,7 @@ if (isset($_POST['addcustomer'])) {
         })();
       }
     }).then(() => {
-      document.getElementById("addCustomerForm").reset();
+      document.getElementById("expense").reset();
     });
   };
 <?php endif; ?>

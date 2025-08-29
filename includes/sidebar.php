@@ -1,13 +1,9 @@
 <body>
-  <?php
-          
-          // if(isset($_POST['logout'])) {
-          //   session_destroy();
-          //   header('Location: ../pages/loginform.php');
-          //   exit();
-          // }
-        ?>
-  <?php include "dbconnection.php"; ?>
+  <?php require_once "dbconnection.php";  
+  if (!isset($_SESSION['id']) || $_SESSION['role'] !== 'pharmacist') {
+    header("Location: loginform.php");
+    exit;
+    }?>
     <div class="container-scroller">
       <!-- partial:partials/_sidebar.html -->
       <nav class="sidebar sidebar-offcanvas" id="sidebar">
@@ -167,7 +163,15 @@
             </a>
           </li>
 
+          <li class="nav-item menu-items">
+            <a class="nav-link" href="expense_entry.php">
+              <span class="menu-icon">
+                <i class="mdi mdi-speedometer"></i>
+              </span>
+              <span class="menu-title">Expense</span>
+            </a>
+          </li>
+
           
-         
         </ul>
       </nav>

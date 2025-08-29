@@ -1,10 +1,11 @@
 <?php
-include "../includes/dbconnection.php";
- session_start();
+require_once "../includes/config.php"; 
+require_once "../includes/dbconnection.php"; 
+
 $popup = false;
 // Fetch medicines
 $medicinesData = [];
-$medicines = $conn->query("SELECT id AS stock_id, medicine_name, sale_price, quantity FROM stock");
+$medicines = $conn->query("SELECT id AS stock_id, medicine_name, sale_price, quantity FROM stock WHERE pharmacist_id = '$pharmacist_id'");
 while ($row = $medicines->fetch_assoc()) {
     $medicinesData[] = $row;
 }
@@ -26,8 +27,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
        $invoice_number   = trim($_POST['invoice_number']);
         $supplier_name    = trim($_POST['supplier_name']);
         $total_amount     = floatval($_POST['total_amount']);
-        $pharmacist_id    = $_SESSION['id'];
-        $pharmacist_name  = $_SESSION['username'];
 
         $supp_id = null;
             $supp_stmt = $conn->prepare("SELECT id FROM supplier WHERE name = ?");
@@ -75,8 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Check stock
             $stock_id = null;
             $current_qty = 0;
-            $stock_stmt = $conn->prepare("SELECT id, quantity FROM stock WHERE medicine_name = ?");
-            $stock_stmt->bind_param("s", $medicine_name);
+            $stock_stmt = $conn->prepare("SELECT id, quantity FROM stock WHERE medicine_name = ? AND pharmacist_id = ?");
+            $stock_stmt->bind_param("si", $medicine_name, $pharmacist_id);
             $stock_stmt->execute();
             $stock_stmt->bind_result($stock_id, $current_qty);
             if ($stock_stmt->fetch()) {
@@ -93,10 +92,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $stock_stmt->close();
                 $insert_stock = $conn->prepare("
-                    INSERT INTO stock (medicine_name, medicine_type_id, quantity, purchase_price, sale_price, expiry_date, supplier_name)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO stock (medicine_name, medicine_type_id, quantity, purchase_price, sale_price, expiry_date, supplier_name, pharmacist_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ");
-                $insert_stock->bind_param("siiddsi", $medicine_name, $medicine_type_id, $quantity, $unit_price, $sale_price, $expiry_date, $supplier_name);
+                $insert_stock->bind_param("siiddssi", $medicine_name, $medicine_type_id, $quantity, $unit_price, $sale_price, $expiry_date, $supplier_name, $pharmacist_id);
                 $insert_stock->execute();
                 $stock_id = $insert_stock->insert_id;
                 $insert_stock->close();
@@ -104,10 +103,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Insert purchase item
             $item_stmt = $conn->prepare("
-                INSERT INTO purchase_items (purchase_id, stock_id, medicine, quantity, unit_price) 
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO purchase_items (purchase_id, stock_id, medicine, quantity, unit_price, pharmacist_id) 
+                VALUES (?, ?, ?, ?, ?, ?)
             ");
-            $item_stmt->bind_param("iisid", $purchase_id, $stock_id, $medicine_name, $quantity, $unit_price);
+            $item_stmt->bind_param("iisidi", $purchase_id, $stock_id, $medicine_name, $quantity, $unit_price, $pharmacist_id);
             $item_stmt->execute();
             $item_stmt->close();
         }

@@ -1,6 +1,7 @@
 <?php
-session_start();
-include "../includes/dbconnection.php";
+require_once "../includes/config.php"; 
+require_once "../includes/dbconnection.php"; 
+
 if (!isset($_GET['sale_id'])) {
     die("No sale ID provided");
 }
@@ -38,6 +39,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt->bind_param("sddssi", $discount, $net_total, $paid_amount, $due_amount, $status, $sale_id);
     $stmt->execute();
     $stmt->close();
+
+    // Update today's revenue (subtract discount)
+        $rev = $conn->prepare("
+            UPDATE revenue 
+            SET amount = amount - ? 
+            WHERE pharmacist_id = ? 
+            AND DATE(date) = CURDATE()
+        ");
+        $rev->bind_param("di", $discount, $pharmacist_id);
+        $rev->execute();
+        $rev->close();
+
 
     header("Location: invoice.php?sale_id=" . $sale_id);
     exit();

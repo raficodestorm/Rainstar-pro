@@ -1,6 +1,7 @@
 <?php
-// blank-page.php
-// Keeps header, sidebar, navbar and footer. Content area is intentionally empty.
+require_once "../includes/config.php"; 
+require_once "../includes/dbconnection.php"; 
+
 include "../includes/header.php";
 include "../includes/sidebar.php";
 ?>
@@ -71,11 +72,12 @@ include "../includes/sidebar.php";
         <th>Medicine</th>
         <th>Quantity</th>
         <th>Unit Price</th>
+        <th>pharmacist id</th>
       </tr>
     </thead>
     <tbody>
       <?php
-        $result = $conn->query("SELECT * FROM purchase_items");
+        $result = $conn->query("SELECT * FROM purchase_items WHERE pharmacist_id = $pharmacist_id");
         if ($result && $result->num_rows > 0) {
           while ($row = $result->fetch_assoc()) {
             echo "<tr>
@@ -85,6 +87,7 @@ include "../includes/sidebar.php";
               <td>{$row['medicine']}</td>
               <td>{$row['quantity']}</td>
               <td>{$row['unit_price']}</td>
+              <td>{$row['pharmacist_id']}</td>
             </tr>";
           }
         } else {

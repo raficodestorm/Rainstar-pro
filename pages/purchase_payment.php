@@ -1,8 +1,7 @@
 <?php
-session_start();
-include "../includes/dbconnection.php";
+require_once "../includes/config.php"; 
+require_once "../includes/dbconnection.php"; 
 
-// blank-page.php
 include "../includes/header.php";
 include "../includes/sidebar.php";
 ?>

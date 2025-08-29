@@ -1,6 +1,6 @@
 <?php
-session_start();
-include "../includes/dbconnection.php";
+require_once "../includes/config.php"; 
+require_once "../includes/dbconnection.php"; 
 
 if (!isset($_GET['sale_id'])) {
     die("No sale ID provided");

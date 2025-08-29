@@ -1,6 +1,6 @@
 <?php
-// blank-page.php
-// Keeps header, sidebar, navbar and footer. Content area is intentionally empty.
+require_once "../includes/config.php"; 
+require_once "../includes/dbconnection.php"; 
 include "../includes/header.php";
 include "../includes/sidebar.php";
 ?>

@@ -1,5 +1,6 @@
 <?php
-include "../includes/dbconnection.php";
+require_once "../includes/config.php"; 
+require_once "../includes/dbconnection.php"; 
 
 $message = "";
 $username = isset($_GET['user']) ? $_GET['user'] : '';

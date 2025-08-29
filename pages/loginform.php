@@ -6,25 +6,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $password = $_POST['password'];
     $role = $_POST['role'];
 
-    $stmt = $conn->prepare("SELECT id, username, password, role_name FROM users WHERE username = ? AND role_name = ?");
+    $stmt = $conn->prepare("SELECT id, fullname, username, email, phone, branch, password, role_name, image FROM users WHERE username = ? AND role_name = ?");
     $stmt->bind_param("ss", $username, $role);
     $stmt->execute();
     $stmt->store_result();
 
     // If user exists
     if ($stmt->num_rows > 0) {
-        $stmt->bind_result($id, $dbUsername, $dbPassword, $dbRole);
+        $stmt->bind_result($id, $dbfullname, $dbUsername, $dbemail, $dbphone, $dbbranch, $dbPassword, $dbRole, $dbimage);
         $stmt->fetch();
 
         if (password_verify($password, $dbPassword)) {
             session_start();
             $_SESSION['id'] = $id;
+            $_SESSION['fullname'] = $dbfullname;
             $_SESSION['username'] = $dbUsername;
+            $_SESSION['email'] = $dbemail;
+            $_SESSION['phone'] = $dbphone;
+            $_SESSION['branch'] = $dbbranch;
             $_SESSION['role'] = $dbRole;
+            $_SESSION['image'] = $dbimage;
             if ($dbRole == 'pharmacist') {
                 header("Location: pharmacist_dashboard.php");
             } elseif ($dbRole == 'admin') {
-                header("Location: pharmacist_dashboard.php");
+                header("Location: admin_field.php");
             }
             exit;
         } else {

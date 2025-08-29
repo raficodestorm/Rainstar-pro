@@ -1,6 +1,7 @@
 <?php
-// blank-page.php
-// Keeps header, sidebar, navbar and footer. Content area is intentionally empty.
+require_once "../includes/config.php"; 
+require_once "../includes/dbconnection.php"; 
+
 include "../includes/header.php";
 include "../includes/sidebar.php";
 ?>
@@ -11,7 +12,7 @@ include "../includes/sidebar.php";
     <div class="content-wrapper">
 <!-- contant area start----------------------------------------------------------------------------->
    <?php
-include "../includes/dbconnection.php";
+// include "../includes/dbconnection.php";
 
 $popup = false; 
 if (isset($_POST['addsupplier'])) {

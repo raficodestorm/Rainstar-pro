@@ -1,8 +1,6 @@
 <?php
-include "../includes/dbconnection.php";
-session_start();
-$pharmacist_id = $_SESSION['id'];
-$pharmacist_name = $_SESSION['username'];
+require_once "../includes/config.php"; 
+require_once "../includes/dbconnection.php"; 
 // ---------------Fetch top 5 sold medicines--------------------------
 $items = "
     SELECT s.medicine_name AS medicine_name, 
@@ -11,6 +9,7 @@ $items = "
            SUM(sd.quantity * s.sale_price) AS total_revenue
     FROM sale_items sd
     JOIN stock s ON sd.medicine = s.medicine_name
+    WHERE s.pharmacist_id = '$pharmacist_id'
     GROUP BY s.id
     ORDER BY total_sold DESC
     LIMIT 5
@@ -49,6 +48,34 @@ $today_purchase_total = 0;
 
 if ($purchases_result && $row = $purchases_result->fetch_assoc()) {
     $today_purchase_total = $row['today_purchase_total'] ?? 0;
+}
+// ---------------Fetch purchase amount--------------------------
+$expense = "
+    SELECT SUM(amount) as today_expense
+    FROM expense
+    WHERE spent_by = '$pharmacist_name' 
+      AND DATE(spent_at) = CURDATE()
+";
+
+$expense_result = $conn->query($expense);
+$today_expense_total = 0;
+
+if ($expense_result && $row = $expense_result->fetch_assoc()) {
+    $today_expense_total = $row['today_expense'] ?? 0;
+}
+// ---------------Fetch revenue amount--------------------------
+$revenue = "
+    SELECT amount as today_revenue_total
+    FROM revenue
+    WHERE pharmacist_id = $pharmacist_id 
+      AND DATE(date) = CURDATE()
+";
+
+$revenue_result = $conn->query($revenue);
+$today_revenue_total = 0;
+
+if ($revenue_result && $row = $revenue_result->fetch_assoc()) {
+  $today_revenue_total = $row['today_revenue_total'] ?? 0;
 }
 ?>
 
@@ -105,8 +132,7 @@ if ($purchases_result && $row = $purchases_result->fetch_assoc()) {
                     <div class="row">
                       <div class="col-9">
                         <div class="d-flex align-items-center align-self-start">
-                          <h3 class="mb-0">$12.34</h3>
-                          <p class="text-danger ml-2 mb-0 font-weight-medium">-2.4%</p>
+                          <h3 class="mb-0">৳ <?php echo $today_expense_total; ?></h3>
                         </div>
                       </div>
                       <div class="col-3">
@@ -125,8 +151,7 @@ if ($purchases_result && $row = $purchases_result->fetch_assoc()) {
                     <div class="row">
                       <div class="col-9">
                         <div class="d-flex align-items-center align-self-start">
-                          <h3 class="mb-0">$31.53</h3>
-                          <p class="text-success ml-2 mb-0 font-weight-medium">+3.5%</p>
+                          <h3 class="mb-0">৳ <?php echo $today_revenue_total; ?></h3>
                         </div>
                       </div>
                       <div class="col-3">
@@ -207,14 +232,14 @@ if ($purchases_result && $row = $purchases_result->fetch_assoc()) {
   });
   <?php endif; ?>
 </script>
-
               <!-- -----------------------End product chart---------------------- -->
+
               <div class="col-md-8 grid-margin stretch-card">
                 <div class="card">
                   <div class="card-body">
                     <div class="d-flex flex-row justify-content-between">
-                      <h4 class="card-title mb-1">Open Projects</h4>
-                      <p class="text-muted mb-1">Your data status</p>
+                      <h4 class="card-title mb-1">Need to purchase</h4>
+                      <p class="text-muted mb-1">remaining</p>
                     </div>
                     <div class="row">
                       <div class="col-12">
@@ -227,12 +252,12 @@ if ($purchases_result && $row = $purchases_result->fetch_assoc()) {
                             </div>
                             <div class="preview-item-content d-sm-flex flex-grow">
                               <div class="flex-grow">
-                                <h6 class="preview-subject">Admin dashboard design</h6>
-                                <p class="text-muted mb-0">Broadcast web app mockup</p>
+                                <h6 class="preview-subject">Napa</h6>
+                                <p class="text-muted mb-0">Red zone</p>
                               </div>
                               <div class="mr-auto text-sm-right pt-2 pt-sm-0">
-                                <p class="text-muted">15 minutes ago</p>
-                                <p class="text-muted mb-0">30 tasks, 5 issues </p>
+                                <p class="text-muted">3ps</p>
+                                <p class="text-muted mb-0">risk position </p>
                               </div>
                             </div>
                           </div>
@@ -244,12 +269,12 @@ if ($purchases_result && $row = $purchases_result->fetch_assoc()) {
                             </div>
                             <div class="preview-item-content d-sm-flex flex-grow">
                               <div class="flex-grow">
-                                <h6 class="preview-subject">Wordpress Development</h6>
-                                <p class="text-muted mb-0">Upload new design</p>
+                                <h6 class="preview-subject">Lorest-10</h6>
+                                <p class="text-muted mb-0">Red zone</p>
                               </div>
                               <div class="mr-auto text-sm-right pt-2 pt-sm-0">
-                                <p class="text-muted">1 hour ago</p>
-                                <p class="text-muted mb-0">23 tasks, 5 issues </p>
+                                <p class="text-muted">5ps</p>
+                                <p class="text-muted mb-0">risk position</p>
                               </div>
                             </div>
                           </div>
@@ -261,12 +286,12 @@ if ($purchases_result && $row = $purchases_result->fetch_assoc()) {
                             </div>
                             <div class="preview-item-content d-sm-flex flex-grow">
                               <div class="flex-grow">
-                                <h6 class="preview-subject">Project meeting</h6>
-                                <p class="text-muted mb-0">New project discussion</p>
+                                <h6 class="preview-subject">Hislet-5</h6>
+                                <p class="text-muted mb-0">yellow zone</p>
                               </div>
                               <div class="mr-auto text-sm-right pt-2 pt-sm-0">
-                                <p class="text-muted">35 minutes ago</p>
-                                <p class="text-muted mb-0">15 tasks, 2 issues</p>
+                                <p class="text-muted">10ps</p>
+                                <p class="text-muted mb-0">need</p>
                               </div>
                             </div>
                           </div>
@@ -278,12 +303,12 @@ if ($purchases_result && $row = $purchases_result->fetch_assoc()) {
                             </div>
                             <div class="preview-item-content d-sm-flex flex-grow">
                               <div class="flex-grow">
-                                <h6 class="preview-subject">Broadcast Mail</h6>
-                                <p class="text-muted mb-0">Sent release details to team</p>
+                                <h6 class="preview-subject">Beften</h6>
+                                <p class="text-muted mb-0">yellow zone</p>
                               </div>
                               <div class="mr-auto text-sm-right pt-2 pt-sm-0">
-                                <p class="text-muted">55 minutes ago</p>
-                                <p class="text-muted mb-0">35 tasks, 7 issues </p>
+                                <p class="text-muted">15ps</p>
+                                <p class="text-muted mb-0">need</p>
                               </div>
                             </div>
                           </div>
@@ -295,12 +320,12 @@ if ($purchases_result && $row = $purchases_result->fetch_assoc()) {
                             </div>
                             <div class="preview-item-content d-sm-flex flex-grow">
                               <div class="flex-grow">
-                                <h6 class="preview-subject">UI Design</h6>
-                                <p class="text-muted mb-0">New application planning</p>
+                                <h6 class="preview-subject">Ulfren</h6>
+                                <p class="text-muted mb-0">gray zone</p>
                               </div>
                               <div class="mr-auto text-sm-right pt-2 pt-sm-0">
-                                <p class="text-muted">50 minutes ago</p>
-                                <p class="text-muted mb-0">27 tasks, 4 issues </p>
+                                <p class="text-muted">25ps</p>
+                                <p class="text-muted mb-0">buy</p>
                               </div>
                             </div>
                           </div>
