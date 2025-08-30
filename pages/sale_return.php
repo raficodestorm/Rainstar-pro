@@ -17,9 +17,10 @@ if (isset($_GET['action'])) {
             FROM sales s
             LEFT JOIN customers c ON c.id = s.customer_id
             WHERE s.id = ?
+            AND s.pharmacist_id = ?
         ";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("i", $sale_id);
+        $stmt->bind_param("ii", $sale_id, $pharmacist_id);
         $stmt->execute();
         $res = $stmt->get_result();
         $sale = $res->fetch_assoc();
@@ -43,7 +44,7 @@ if (isset($_GET['action'])) {
 
         // Items actually sold in this sale, with current purchase_price for profit calc
         $sql = "
-            SELECT si.stock_id,
+            SELECT si.stock_id AS stock_id,
                    COALESCE(si.medicine, st.medicine_name) AS medicine,
                    si.unit_price AS sale_unit_price,
                    COALESCE(st.purchase_price, 0) AS purchase_price,
@@ -51,10 +52,11 @@ if (isset($_GET['action'])) {
             FROM sale_items si
             LEFT JOIN stock st ON st.id = si.stock_id
             WHERE si.sale_id = ?
+            AND si.pharmacist_id = ?
             ORDER BY medicine ASC
         ";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("i", $sale_id);
+        $stmt->bind_param("ii", $sale_id, $pharmacist_id);
         $stmt->execute();
         $res = $stmt->get_result();
 
@@ -63,7 +65,7 @@ if (isset($_GET['action'])) {
             $items[] = $row;
         }
         $stmt->close();
-
+        $stk_id = $items['stock_id']
         echo json_encode(['ok' => true, 'items' => $items]);
         exit;
     }
@@ -85,7 +87,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sale_id      = intval($_POST['invoice_number'] ?? 0); // treating invoice as sale_id
     $customer_id  = intval($_POST['customer_id'] ?? 0);
     $reason       = trim($_POST['reason'] ?? '');
-    $stock_ids    = $_POST['stock_id'] ?? [];
+    $stock_ids    = $stk_id;
+    $medicine     = htmlspecialchars($_POST['medicine']);
     $qtys         = $_POST['quantity'] ?? [];
     $unit_prices  = $_POST['unit_price'] ?? []; // sale unit prices from UI
 
@@ -114,8 +117,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Prepared statements
                 $ins_return = $conn->prepare("
-                    INSERT INTO sale_return_items (sale_id, stock_id, quantity, unit_price, reason, pharmacist_id)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO sale_return_items (sale_id, stock_id, medicine, quantity, unit_price, reason, pharmacist_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                 ");
                 $upd_stock = $conn->prepare("UPDATE stock SET quantity = quantity + ? WHERE id = ?");
                 $sel_si    = $conn->prepare("SELECT quantity, unit_price FROM sale_items WHERE sale_id=? AND stock_id=?");
@@ -147,8 +150,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
 
                     // Insert into return_items (store sale unit price)
-                    $ins_return->bind_param("iiidsi", $sale_id, $stock_id, $qty, $sale_price, $reason, $pharmacist_id);
+                    $ins_return->bind_param("iiidsi", $sale_id, $stock_id, $medicine, $qty, $sale_price, $reason, $pharmacist_id);
                     $ins_return->execute();
+                    $return_id = $ins_return->insert_id;
+                    $ins_return->close();
 
                     // Add quantity back to stock
                     $upd_stock->bind_param("ii", $qty, $stock_id);
@@ -195,8 +200,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $upd_sales->bind_param("dddii", $new_total_amount, $new_net_total, $paid_amount, $due, $sale_id);
                 $upd_sales->execute();
 
-                // Update revenue (subtract profit for the sale date & pharmacist)
-                // revenue.amount is INT in your schema, so we round the profit delta.
                 $profit_delta_int = (int)round($profit_deduction);
 
                 // If there is any profit to deduct, update that day's revenue row
@@ -220,7 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Commit
                 $conn->commit();
-                $flash = ['type' => 'success', 'msg' => 'Sales return recorded successfully.'];
+                header("Location: sale_return_invoice.php?return_id=" . $return_id);
             } catch (Throwable $e) {
                 $conn->rollback();
                 $flash = ['type' => 'error', 'msg' => 'Failed to record return: ' . $e->getMessage()];
@@ -431,7 +434,7 @@ include "../includes/sidebar.php";
   // Build options from saleItems
   function buildMedicineOptions() {
     return saleItems.map(it =>
-      `<option value="${it.stock_id}"
+      `<option value="${it.medicine}"
                data-price="${it.sale_unit_price}"
                data-pp="${it.purchase_price}"
                data-max="${it.sold_qty}">
@@ -452,7 +455,7 @@ include "../includes/sidebar.php";
     row.innerHTML = `
       <div class="sreturn-form-group">
         <label>Medicine</label>
-        <select name="stock_id[]" required onchange="onMedicineChange(this)">
+        <select name="medicine[]" required onchange="onMedicineChange(this)">
           <option value="" disabled selected>Select item</option>
           ${buildMedicineOptions()}
         </select>

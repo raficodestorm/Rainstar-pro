@@ -27,8 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Find stock_id by medicine name
             $stock_id = null;
-            $stmt = $conn->prepare("SELECT id FROM stock WHERE medicine_name = ?");
-            $stmt->bind_param("s", $medicine_name);
+            $stmt = $conn->prepare("SELECT id FROM stock WHERE medicine_name = ? AND pharmacist_id = ?");
+            $stmt->bind_param("si", $medicine_name, $pharmacist_id);
             $stmt->execute();
             $stmt->bind_result($stock_id);
             $stmt->fetch();
@@ -45,7 +45,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->close();
 
                 // Update stock
-                $conn->query("UPDATE stock SET quantity = quantity - $qty WHERE id = $stock_id");
+                $stm = $conn->prepare("UPDATE stock SET quantity = quantity - ? WHERE id = ? ");
+                $stm->bind_param("ii", $qty, $stock_id);
+                $stm->execute();
+                $stm->close();
             }
         }
         $popup = true;
@@ -63,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div class="form-container">
         <h2>Purchase Return Form</h2>
 
-        <form method="POST">
+        <form method="POST" id="purchaseReturn">
           <!-- Invoice -->
           <div class="form-group">
             <label for="invoice">Purchase Invoice Number</label>
@@ -110,28 +113,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <audio id="click"><source src="../images/success.mp3" type="audio/mpeg"></audio>
-
-<?php if (!empty($popup)) : ?>
-<script>
-document.getElementById('click').play();
-Swal.fire({
-  title: '🏆 Successful!🏆',
-  text: 'Purchase return has been saved successfully.',
-  icon: 'success',
-  background: 'linear-gradient(135deg,#3a86ff 0%,#db00b6 100%)',
-  color: '#fff',
-  confirmButtonText: 'Great!',
-  confirmButtonColor: '#072ac8',
-  showClass: { popup: 'animate__animated animate__zoomIn' },
-  hideClass: { popup: 'animate__animated animate__zoomOut' },
-  customClass: {
-    popup: 'rounded-3xl shadow-2xl p-6',
-    title: 'text-3xl font-bold',
-    confirmButton: 'px-6 py-2 rounded-full shadow-lg'
-  }
-}).then(() => { window.location.reload(); });
-</script>
-<?php endif; ?>
 
 <!-- ===================== JS ====================== -->
 <script>
@@ -219,6 +200,54 @@ Swal.fire({
   window.onload = () => addReturnRow();
 </script>
 
+  <script>
+<?php if ($popup): ?>
+  window.onload = function() {
+    Swal.fire({
+      title: '🏆 Successful!🏆',
+      text: 'Your return has been saved successfully.',
+      icon: 'success',
+      background: 'linear-gradient(135deg,#3a86ff 0%,#db00b6 100%)', 
+      color: '#fff',
+      confirmButtonText: 'Great!',
+      confirmButtonColor: '#072ac8',
+      showClass: {
+        popup: 'animate__animated animate__zoomIn'
+      },
+      hideClass: {
+        popup: 'animate__animated animate__zoomOut'
+      },
+      customClass: {
+        popup: 'rounded-3xl shadow-2xl p-6',
+        title: 'text-3xl font-bold',
+        confirmButton: 'px-6 py-2 rounded-full shadow-lg'
+      },
+      didOpen: () => {
+        const duration = 2 * 1000; // 2 seconds
+        const animationEnd = Date.now() + duration;
+        (function frame() {
+          confetti({
+            particleCount: 5,
+            startVelocity: 30,
+            spread: 360,
+            origin: { x: Math.random(), y: Math.random() - 0.2 }
+          });
+          if (Date.now() < animationEnd) {
+            requestAnimationFrame(frame);
+          }
+        })();
+      }
+    }).then(() => {
+      document.getElementById("purchaseReturn").reset();
+    });
+  };
+<?php endif; ?>
+</script>
+<?php if (!empty($popup)) : ?>
+<script>
+    document.getElementById('click').play();
+</script>
+<?php endif; ?>
 <style>
   .form-container {
     background: #191d24;
