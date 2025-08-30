@@ -180,8 +180,8 @@ CREATE TABLE revenue (
 INSERT INTO role (role_name) VALUES ('admin');
 INSERT INTO role (role_name) VALUES ('pharmacist');
 -- ------------------- Insert sample user---------------------------------------
-INSERT INTO users (fullname, username, email, phone, branch, password, role_name) VALUES ('Omar', 'omar', 'omar@gmail.com', 0124578552, 'Lalbag', 12345, 'admin');
-INSERT INTO users (fullname, username, email, phone, branch, password, role_name) VALUES ('Faruk', 'faruk', 'faruk@gmail.com', 0124578652, 'Lalbag', 12345, 'pharmacist');
+INSERT INTO users (fullname, username, email, phone, branch, password, role_name) VALUES ('Omar', 'omar', 'omar@gmail.com', 0124578552, 'Lalbag', '$2y$10$G1JB4OcEgr.reDNWP7ODUeWld2jl7QWTSPaVi4V26X8...', 'admin');
+INSERT INTO users (fullname, username, email, phone, branch, password, role_name) VALUES ('Faruk', 'faruk', 'faruk@gmail.com', 0124578652, 'Lalbag', '$2y$10$G1JB4OcEgr.reDNWP7ODUeWld2jl7QWTSPaVi4V26X8...', 'pharmacist');
 -- ------------------- Insert sample supplier---------------------------------------
 INSERT INTO supplier (name, contact_person, phone, email, address) 
 VALUES 

@@ -1,9 +1,9 @@
 <body>
   <?php require_once "dbconnection.php";  
-  if (!isset($_SESSION['id']) || $_SESSION['role'] !== 'pharmacist') {
-    header("Location: loginform.php");
-    exit;
-    }?>
+  // if (!isset($_SESSION['id']) || $_SESSION['role'] !== 'pharmacist') {
+  //   header("Location: loginform.php");
+  //   exit;
+  //   }?>
     <div class="container-scroller">
       <!-- partial:partials/_sidebar.html -->
       <nav class="sidebar sidebar-offcanvas" id="sidebar">

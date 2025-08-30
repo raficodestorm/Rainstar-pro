@@ -114,8 +114,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Prepared statements
                 $ins_return = $conn->prepare("
-                    INSERT INTO return_items (sale_id, stock_id, quantity, unit_price, reason)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO sale_return_items (sale_id, stock_id, quantity, unit_price, reason, pharmacist_id)
+                    VALUES (?, ?, ?, ?, ?, ?)
                 ");
                 $upd_stock = $conn->prepare("UPDATE stock SET quantity = quantity + ? WHERE id = ?");
                 $sel_si    = $conn->prepare("SELECT quantity, unit_price FROM sale_items WHERE sale_id=? AND stock_id=?");
@@ -147,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
 
                     // Insert into return_items (store sale unit price)
-                    $ins_return->bind_param("iiids", $sale_id, $stock_id, $qty, $sale_price, $reason);
+                    $ins_return->bind_param("iiidsi", $sale_id, $stock_id, $qty, $sale_price, $reason, $pharmacist_id);
                     $ins_return->execute();
 
                     // Add quantity back to stock
@@ -551,10 +551,19 @@ include "../includes/sidebar.php";
     saleInfo = res.sale;
 
     // Set/lock customer
-    const customerSelect = document.getElementById('customer_id');
-    customerSelect.value = String(saleInfo.customer_id);
-    customerSelect.setAttribute('readonly', 'readonly');
-    customerSelect.setAttribute('disabled', 'disabled');
+const customerSelect = document.getElementById('customer_id');
+customerSelect.value = String(saleInfo.customer_id);
+customerSelect.setAttribute('disabled', 'disabled');
+
+// Add hidden input so value is posted
+let hidden = document.querySelector('input[name="customer_id"]');
+if (!hidden) {
+  hidden = document.createElement('input');
+  hidden.type = 'hidden';
+  hidden.name = 'customer_id';
+  document.getElementById('salesReturnForm').appendChild(hidden);
+}
+hidden.value = saleInfo.customer_id;
 
     meta.textContent = `Customer: ${saleInfo.customer_name || 'N/A'} • Date: ${saleInfo.sale_date}`;
     meta.style.color = '#9ad29a';

@@ -20,7 +20,7 @@ if (isset($_POST['expense'])) {
     $description = $_POST['description'];
 
     $customer = $conn->prepare("INSERT INTO expense(amount, purpose, description, spent_by) VALUES(?, ?, ?, ?)");
-    $customer->bind_param("dsss", $amount, $purpose, $description, $phamacist);
+    $customer->bind_param("dsss", $amount, $purpose, $description, $pharmacist_name);
 
     if ($customer->execute()) {
         $popup = true;
