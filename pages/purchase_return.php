@@ -3,6 +3,49 @@ require_once "../includes/config.php";
 require_once "../includes/dbconnection.php"; 
 include "../includes/header.php";
 include "../includes/sidebar.php";
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $invoice_no   = $_POST['invoice_number'];
+    $supplier_id  = $_POST['supplier_id'];
+    $reason       = $_POST['reason'];
+    $total_refund = $_POST['total_refund'];
+
+    // Find purchase_id by invoice number
+    $purchase_id = null;
+    $stmt = $conn->prepare("SELECT id FROM purchases WHERE invoice_no = ?");
+    $stmt->bind_param("s", $invoice_no);
+    $stmt->execute();
+    $stmt->bind_result($purchase_id);
+    $stmt->fetch();
+    $stmt->close();
+
+    if ($purchase_id) {
+        foreach ($_POST['stock_id'] as $index => $stock_id) {
+            $qty        = intval($_POST['quantity'][$index]);
+            $unit_price = floatval($_POST['unit_price'][$index]);
+
+            // Insert into purchase_return
+            $stmt = $conn->prepare("
+                INSERT INTO purchase_return (purchase_id, stock_id, quantity, reason) 
+                VALUES (?, ?, ?, ?)
+            ");
+            $stmt->bind_param("iiis", $purchase_id, $stock_id, $qty, $reason);
+            $stmt->execute();
+            $stmt->close();
+
+            // Update stock (reduce returned quantity)
+            $conn->query("UPDATE stock SET quantity = quantity - $qty WHERE id = $stock_id");
+        }
+
+        echo "<script>
+                alert('✅ Purchase return recorded successfully!');
+                window.location.href='purchase_return.php';
+              </script>";
+        exit;
+    } else {
+        echo "<script>alert('❌ Invalid invoice number.');</script>";
+    }
+}
 ?>
 <div class="container-fluid page-body-wrapper">
   <?php include "../includes/navbar.php"; ?>
@@ -11,256 +54,178 @@ include "../includes/sidebar.php";
     <div class="content-wrapper">
 <!-- contant area start----------------------------------------------------------------------------->
    
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Purchase Return Form</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+<div class="form-container">
+        <h2>Purchase Return Form</h2>
 
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #0f0f0f, #1a1a1a);
-      color: #e0e0e0;
-  
-    }
+        <form method="POST">
+          <!-- Invoice -->
+          <div class="form-group">
+            <label for="invoice">Purchase Invoice Number</label>
+            <input type="text" name="invoice_number" required placeholder="Enter purchase invoice number">
+          </div>
 
-    .form-container {
-      background: #191d24;
-      backdrop-filter: blur(12px);
-      border-radius: 14px;
-      padding: 30px 40px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
-      max-width: 900px;
-      margin: auto;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
+          <!-- Supplier -->
+          <div class="form-group">
+            <label for="supplier">Select Supplier</label>
+            <select name="supplier_id" required>
+              <option value="" disabled selected hidden>Select a supplier</option>
+              <?php
+              $suppliers = $conn->query("SELECT id, name FROM supplier ORDER BY name ASC");
+              while ($s = $suppliers->fetch_assoc()) {
+                  echo "<option value='{$s['id']}'>{$s['name']}</option>";
+              }
+              ?>
+            </select>
+          </div>
 
-    h2 {
-      text-align: center;
-      margin-bottom: 25px;
-      color: #ffffff;
-    }
+          <!-- Reason -->
+          <div class="form-group">
+            <label for="reason">Reason for Return</label>
+            <textarea name="reason" rows="3" placeholder="Describe the reason for return" required></textarea>
+          </div>
 
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 20px;
-    }
+          <!-- Items Section -->
+          <div class="section-title">Return Items</div>
+          <div id="return-items-container"></div>
+          <button type="button" class="add-btn" onclick="addReturnRow()">+ Add Item</button>
 
-    label {
-      margin-bottom: 8px;
-      font-weight: 600;
-      color: #bdbdbd;
-    }
+          <!-- Refund -->
+          <div class="form-group" style="margin-top: 30px;">
+            <label for="total-refund">Total Refund Amount</label>
+            <input type="number" id="total-refund" name="total_refund" readonly value="0.00">
+          </div>
 
-    input, select, textarea {
-      padding: 10px 14px;
-      border-radius: 8px;
-      border: 1px solid #333;
-      font-size: 15px;
-      background-color: rgba(40, 40, 40, 0.9);
-      color: #ffffff;
-      transition: all 0.3s ease;
-    }
-
-    input:focus, select:focus, textarea:focus {
-      border-color: #4dabf7;
-      outline: none;
-      box-shadow: 0 0 8px rgba(77, 171, 247, 0.5);
-      background-color: rgba(50, 50, 50, 0.95);
-    }
-
-    .grid-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) 50px;
-      gap: 20px;
-      margin-bottom: 15px;
-      align-items: end;
-    }
-
-    .add-btn {
-      margin-top: 10px;
-      padding: 10px 18px;
-      border: none;
-      background: linear-gradient(135deg, #4dabf7, #339af0);
-      color: white;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.3s ease;
-    }
-
-    .add-btn:hover {
-      background: linear-gradient(135deg, #74c0fc, #4dabf7);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(77, 171, 247, 0.4);
-    }
-
-    .submit-btn {
-      background: linear-gradient(135deg, #4dabf7, #1c7ed6);
-      color: white;
-      padding: 12px 20px;
-      font-size: 16px;
-      font-weight: 600;
-      border: none;
-      border-radius: 10px;
-      width: 100%;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .submit-btn:hover {
-      background: linear-gradient(135deg, #74c0fc, #4dabf7);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(77, 171, 247, 0.4);
-    }
-
-    .section-title {
-      margin: 20px 0 10px;
-      font-size: 18px;
-      color: #bbbbbb;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      padding-bottom: 5px;
-    }
-
-    .delete-btn {
-      padding: 8px 10px;
-      background: linear-gradient(135deg, #e74c3c, #c0392b);
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: all 0.3s ease;
-    }
-
-    .delete-btn:hover {
-      background: linear-gradient(135deg, #ff6b6b, #d63031);
-      transform: scale(1.05);
-    }
-
-    @media (max-width: 600px) {
-      .grid-row {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="form-container">
-    <h2>Purchase Return Form</h2>
-    <form id="purchaseReturnForm">
-      <div class="form-group">
-        <label for="invoice">Purchase Invoice Number</label>
-        <input type="text" name="invoice_number" required placeholder="Enter purchase invoice number">
+          <!-- Submit -->
+          <button type="submit" class="submit-btn">Confirm Purchase Return</button>
+        </form>
       </div>
+    </div>
+  </div>
+</div>
 
+<!-- ===================== JS ====================== -->
+<script>
+  // Medicine data from DB
+  const medicines = [
+    <?php
+      $medicines = $conn->query("SELECT id, medicine_name, purchase_price FROM stock ORDER BY medicine_name ASC");
+      $arr = [];
+      while ($m = $medicines->fetch_assoc()) {
+          $arr[] = "{id: {$m['id']}, name: '".addslashes($m['medicine_name'])."', price: {$m['purchase_price']}}";
+      }
+      echo implode(",", $arr);
+    ?>
+  ];
+
+  // Add new row
+  function addReturnRow() {
+    const container = document.getElementById('return-items-container');
+
+    let options = medicines.map(med =>
+      `<option value="${med.id}" data-price="${med.price}">${med.name}</option>`
+    ).join('');
+
+    const row = document.createElement('div');
+    row.className = 'grid-row';
+    row.innerHTML = `
       <div class="form-group">
-        <label for="supplier">Select Supplier</label>
-        <select name="supplier_id" required>
-          <option value="" disabled selected hidden>Select a supplier</option>
-          <option value="1">ABC Pharma</option>
-          <option value="2">XYZ Distributors</option>
+        <label>Medicine</label>
+        <select name="stock_id[]" required onchange="calculateRefund(this)">
+          <option value="" disabled selected>Select medicine</option>
+          ${options}
         </select>
       </div>
 
       <div class="form-group">
-        <label for="reason">Reason for Return</label>
-        <textarea name="reason" rows="3" placeholder="Describe the reason for return" required></textarea>
+        <label>Quantity</label>
+        <input type="number" name="quantity[]" min="1" value="1" oninput="calculateRefund(this)">
       </div>
 
-      <div class="section-title">Return Items</div>
-
-      <div id="return-items-container"></div>
-
-      <button type="button" class="add-btn" onclick="addReturnRow()">+ Add Item</button>
-
-      <div class="form-group" style="margin-top: 30px;">
-        <label for="total-refund">Total Refund Amount</label>
-        <input type="number" id="total-refund" name="total_refund" readonly value="0.00">
+      <div class="form-group">
+        <label>Unit Price</label>
+        <input type="number" name="unit_price[]" step="0.01" value="0.00" readonly>
       </div>
 
-      <button type="submit" class="submit-btn">Confirm Purchase Return</button>
-    </form>
-  </div>
+      <div class="form-group">
+        <label>Total</label>
+        <input type="number" name="total[]" step="0.01" value="0.00" readonly>
+      </div>
 
-  <script>
-    function addReturnRow() {
-      const container = document.getElementById('return-items-container');
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button type="button" class="delete-btn" onclick="removeRow(this)">❌</button>
+      </div>
+    `;
 
-      const row = document.createElement('div');
-      row.className = 'grid-row';
-      row.innerHTML = `
-        <div class="form-group">
-          <label>Medicine</label>
-          <select name="stock_id[]" required onchange="calculateRefund(this)">
-            <option value="1" data-price="8">NAPA (Supplier Price)</option>
-            <option value="2" data-price="10">Maxpro (Supplier Price)</option>
-          </select>
-        </div>
+    container.appendChild(row);
+  }
 
-        <div class="form-group">
-          <label>Quantity</label>
-          <input type="number" name="quantity[]" min="1" value="1" oninput="calculateRefund(this)">
-        </div>
+  // Calculate refund for a row
+  function calculateRefund(elem) {
+    const row = elem.closest('.grid-row');
+    const qty = parseInt(row.querySelector('[name="quantity[]"]').value) || 0;
+    const select = row.querySelector('[name="stock_id[]"]');
+    const price = select.options[select.selectedIndex]?.dataset.price || 0;
 
-        <div class="form-group">
-          <label>Unit Price</label>
-          <input type="number" name="unit_price[]" step="0.01" value="8.00" readonly>
-        </div>
+    row.querySelector('[name="unit_price[]"]').value = price;
+    row.querySelector('[name="total[]"]').value = (qty * price).toFixed(2);
 
-        <div class="form-group">
-          <label>Total</label>
-          <input type="number" name="total[]" step="0.01" value="8.00" readonly>
-        </div>
+    updateRefundTotal();
+  }
 
-        <div class="form-group">
-          <label>&nbsp;</label>
-          <button type="button" class="delete-btn" onclick="removeRow(this)">❌</button>
-        </div>
-      `;
+  // Update total refund
+  function updateRefundTotal() {
+    let total = 0;
+    document.querySelectorAll('[name="total[]"]').forEach(input => {
+      total += parseFloat(input.value) || 0;
+    });
+    document.getElementById('total-refund').value = total.toFixed(2);
+  }
 
-      container.appendChild(row);
-      updateRefundTotal();
-    }
+  // Remove row
+  function removeRow(button) {
+    button.closest('.grid-row').remove();
+    updateRefundTotal();
+  }
 
-    function calculateRefund(elem) {
-      const row = elem.closest('.grid-row');
-      const qty = row.querySelector('[name="quantity[]"]').value;
-      const select = row.querySelector('[name="stock_id[]"]');
-      const price = select.options[select.selectedIndex].dataset.price;
-
-      row.querySelector('[name="unit_price[]"]').value = price;
-      row.querySelector('[name="total[]"]').value = (qty * price).toFixed(2);
-
-      updateRefundTotal();
-    }
-
-    function updateRefundTotal() {
-      let total = 0;
-      document.querySelectorAll('[name="total[]"]').forEach(input => {
-        total += parseFloat(input.value) || 0;
-      });
-      document.getElementById('total-refund').value = total.toFixed(2);
-    }
-
-    function removeRow(button) {
-      button.closest('.grid-row').remove();
-      updateRefundTotal();
-    }
-
-    window.onload = () => addReturnRow();
-  </script>
-</body>
-</html>
-
-
+  // Add first row on page load
+  window.onload = () => addReturnRow();
+</script>
+<style>
+  .form-container {
+    background: #191d24;
+    border-radius: 14px;
+    padding: 30px 40px;
+    max-width: 900px;
+    margin: auto;
+    color: #fff;
+  }
+  h2 { text-align: center; margin-bottom: 25px; }
+  .form-group { display: flex; flex-direction: column; margin-bottom: 20px; }
+  label { margin-bottom: 6px; font-weight: 600; color: #ccc; }
+  input, select, textarea {
+    padding: 10px; border-radius: 8px; border: 1px solid #333;
+    background: #2a2a2a; color: #fff;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: #4dabf7; outline: none;
+  }
+  .grid-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) 50px;
+    gap: 20px; margin-bottom: 15px; align-items: end;
+  }
+  .add-btn, .submit-btn, .delete-btn {
+    border: none; cursor: pointer; font-weight: 600; transition: 0.3s;
+    border-radius: 8px; padding: 10px 15px;
+  }
+  .add-btn { background: #339af0; color: #fff; }
+  .add-btn:hover { background: #74c0fc; }
+  .submit-btn { width: 100%; background: #1c7ed6; color: #fff; padding: 12px; border-radius: 10px; }
+  .submit-btn:hover { background: #4dabf7; }
+  .delete-btn { background: #c0392b; color: #fff; }
+  .delete-btn:hover { background: #e74c3c; }
+</style>
 
 <!-- contant area end----------------------------------------------------------------------------->
     </div> <!-- content-wrapper ends -->

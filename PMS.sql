@@ -96,7 +96,7 @@ CREATE TABLE sale_items (
 );
 
 -- 9. Return Table (Customer returns after sale)
-CREATE TABLE return_items (
+CREATE TABLE sale_return_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     sale_id INT,
     stock_id INT,
@@ -104,6 +104,7 @@ CREATE TABLE return_items (
     unit_price DECIMAL(10,2) NOT NULL,
     reason TEXT,
     return_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    pharmacist_id INT,
     FOREIGN KEY (sale_id) REFERENCES sales(id),
     FOREIGN KEY (stock_id) REFERENCES stock(id)
 );
@@ -145,6 +146,7 @@ CREATE TABLE purchase_return (
     quantity INT,
     reason TEXT,
     return_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    pharmacist_id INT,
     FOREIGN KEY (purchase_id) REFERENCES purchases(id),
     FOREIGN KEY (stock_id) REFERENCES stock(id)
 );
