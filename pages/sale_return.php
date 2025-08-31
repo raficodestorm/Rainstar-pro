@@ -59,13 +59,15 @@ if (isset($_GET['action'])) {
         $stmt->bind_param("ii", $sale_id, $pharmacist_id);
         $stmt->execute();
         $res = $stmt->get_result();
-
+        $ress = $stmt->get_result()->fetch_assoc();
+        $stk_id = $ress['stock_id'];
         $items = [];
         while ($row = $res->fetch_assoc()) {
             $items[] = $row;
         }
+        
         $stmt->close();
-        $stk_id = $items['stock_id']
+        
         echo json_encode(['ok' => true, 'items' => $items]);
         exit;
     }
@@ -455,7 +457,7 @@ include "../includes/sidebar.php";
     row.innerHTML = `
       <div class="sreturn-form-group">
         <label>Medicine</label>
-        <select name="medicine[]" required onchange="onMedicineChange(this)">
+        <select name="stock[]" required onchange="onMedicineChange(this)">
           <option value="" disabled selected>Select item</option>
           ${buildMedicineOptions()}
         </select>
