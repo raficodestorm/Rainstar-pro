@@ -37,10 +37,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($stock_id) {
                 // Insert into purchase_return
                 $stmt = $conn->prepare("
-                    INSERT INTO purchase_return (purchase_id, stock_id, quantity, reason, pharmacist_id) 
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO purchase_return (purchase_id, stock_id, medicine, quantity, reason, pharmacist_id) 
+                    VALUES (?, ?, ?, ?, ?, ?)
                 ");
-                $stmt->bind_param("iiisi", $purchase_id, $stock_id, $qty, $reason, $pharmacist_id);
+                $stmt->bind_param("iisisi", $purchase_id, $stock_id, $medicine_name, $qty, $reason, $pharmacist_id);
                 $stmt->execute();
                 $stmt->close();
 

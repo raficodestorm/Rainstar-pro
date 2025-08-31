@@ -142,6 +142,16 @@
                     <span class="sub-text">Purchase items</span>
                   </a>
               </li>
+
+              <li>
+                  <a class="" href="purchase_return_items.php">
+                    <span class="">
+                      <i class="mdi mdi-speedometer"></i>
+                    </span>
+                    <span class="sub-text">Purchase return</span>
+                  </a>
+              </li>
+
             </ul>
           </li>
 
@@ -169,6 +179,15 @@
                 <i class="mdi mdi-speedometer"></i>
               </span>
               <span class="menu-title">Expense</span>
+            </a>
+          </li>
+
+          <li class="nav-item menu-items">
+            <a class="nav-link" href="all_expense.php">
+              <span class="menu-icon">
+                <i class="mdi mdi-speedometer"></i>
+              </span>
+              <span class="menu-title">All Expense</span>
             </a>
           </li>
 

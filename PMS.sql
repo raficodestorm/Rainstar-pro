@@ -32,7 +32,9 @@ CREATE TABLE supplier (
     phone VARCHAR(20),
     email VARCHAR(100),
     address TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    added_by INT,
+    FOREIGN KEY (added_by) REFERENCES users(id)
 );
 
 -- 4. Medicine Type Table
@@ -63,7 +65,9 @@ CREATE TABLE customers (
     phone VARCHAR(20),
     email VARCHAR(100),
     address TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    added_by INT,
+    FOREIGN KEY (added_by) REFERENCES users(id)
 );
 
 -- 7. Sales Table
@@ -143,6 +147,7 @@ CREATE TABLE purchase_return (
     id INT AUTO_INCREMENT PRIMARY KEY,
     purchase_id INT,
     stock_id INT,
+    medicine VARCHAR(100),
     quantity INT,
     reason TEXT,
     return_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -159,7 +164,19 @@ CREATE TABLE expired_medicine (
     noted_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (stock_id) REFERENCES stock(id)
 );
--- 14. expense Table 
+
+-- 14. damage Table 
+CREATE TABLE damage (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    stock_id INT,
+    medicine VARCHAR(100),
+    quantity INT,
+    unit_price INT,
+    noted_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (stock_id) REFERENCES stock(id)
+); 
+
+-- 15. expense Table 
 CREATE TABLE expense (
     id INT AUTO_INCREMENT PRIMARY KEY, 
     amount INT,
@@ -168,12 +185,13 @@ CREATE TABLE expense (
     spent_by VARCHAR(100),
     spent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
--- 15. expense Table 
+-- 16. expense Table 
 CREATE TABLE revenue (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    pharmacist_id VARCHAR(10) NOT NULL, 
+    pharmacist_id INT, 
     amount INT,
-    Date DATE DEFAULT (CURRENT_DATE)
+    Date DATE DEFAULT (CURRENT_DATE),
+    FOREIGN KEY (pharmacist_id) REFERENCES users(id)
 );
 
 -- ------------------- Insert default roles---------------------------------------
