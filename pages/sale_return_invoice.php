@@ -10,7 +10,7 @@ $return_id = intval($_GET['return_id']);
 
 // Fetch return info with related sale and customer
 $return = $conn->query("
-    SELECT sri.id AS return_id, sri.sale_id, sri.medicine, sri.reason, sri.pharmacist_id, sri.unit_price, sri.quantity,
+    SELECT sri.id AS return_id, sri.sale_id, sri.reason, sri.pharmacist_id, sri.unit_price, sri.medicine AS medicine, sri.quantity,
            s.sale_date, c.name AS customer_name, p.username AS pharmacist_name
     FROM sale_return_items sri
     JOIN sales s ON sri.sale_id = s.id
@@ -26,8 +26,10 @@ if (!$return) {
 
 // Aggregate total refund
 $total_refund = 0;
+$medicine = null;
 foreach($return as $row) {
     $total_refund += $row['quantity'] * $row['unit_price'];
+    $medicine =  $row['medicine'];
 }
 ?>
 <!DOCTYPE html>
@@ -42,6 +44,7 @@ body {
     line-height: 1.4;
     color: #000;
 }
+.rain{ font-size: 20px; }
 .center { text-align: center; }
 .bold { font-weight: bold; }
 .line { border-top: 1px dashed #000; margin: 5px 0; }
@@ -56,16 +59,16 @@ td { padding: 2px 0; }
 </head>
 <body>
 
-<div class="center bold">RainStar Pharma</div>
+<div class="center bold rain">RainStar Pharma</div>
 <div class="center">Lalbag, Dhaka</div>
 <br>
 <div class="center bold">SALES RETURN RECEIPT</div>
 <br>
 
-Return ID: BRR<?= $return[0]['return_id']; ?><br>
+Return ID: BRP<?= $return[0]['return_id']; ?><br>
 Original Sale ID: BRP<?= $return[0]['sale_id']; ?><br>
 Customer: <?= htmlspecialchars($return[0]['customer_name']); ?><br>
-Pharmacist: <?= htmlspecialchars($return[0]['pharmacist_name']); ?><br>
+Transaction by: <?= htmlspecialchars($return[0]['pharmacist_name']); ?><br>
 <table style="width:100%;">
     <tr>
         <td>Date: <?= date("d-m-Y", strtotime($return[0]['sale_date'])); ?></td>
@@ -89,7 +92,7 @@ foreach($return as $row):
 ?>
 <tr>
     <td><?= $sl++; ?></td>
-    <td><?= htmlspecialchars($row['medicine']); ?></td>
+    <td><?= htmlspecialchars($medicine); ?></td>
     <td class="right"><?= $row['quantity']; ?></td>
     <td class="right"><?= number_format($row['unit_price'],2); ?></td>
     <td class="right"><?= number_format($total,2); ?></td>

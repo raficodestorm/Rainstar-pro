@@ -54,13 +54,13 @@ include "../includes/sidebar.php";
 
     .stc-title{ text-align:center; color:#007bff; font-weight:bold; }
 
-    tr:hover td{ background:black; color:#ff4800; }
-    tr:hover{ border-left:4px solid #ff4800; }
+    tr:hover td{ background:black; color:#9ef01a; }
+    tr:hover{ border-left:4px solid #9ef01a; }
   </style>
 </head>
 <body>
 
-<div class="stc-title"><h2>purchase items record</h2></div>
+<div class="stc-title"><h2>Purchase items record</h2></div>
 
 <div class="table-wrap">
   <table>
@@ -72,12 +72,11 @@ include "../includes/sidebar.php";
         <th>Medicine</th>
         <th>Quantity</th>
         <th>Unit Price</th>
-        <th>pharmacist id</th>
       </tr>
     </thead>
     <tbody>
       <?php
-        $result = $conn->query("SELECT * FROM purchase_items WHERE pharmacist_id = $pharmacist_id");
+        $result = $conn->query("SELECT * FROM purchase_items WHERE pharmacist_id = $pharmacist_id ORDER BY purchase_id DESC");
         if ($result && $result->num_rows > 0) {
           while ($row = $result->fetch_assoc()) {
             echo "<tr>
@@ -87,7 +86,6 @@ include "../includes/sidebar.php";
               <td>{$row['medicine']}</td>
               <td>{$row['quantity']}</td>
               <td>{$row['unit_price']}</td>
-              <td>{$row['pharmacist_id']}</td>
             </tr>";
           }
         } else {

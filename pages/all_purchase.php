@@ -93,13 +93,12 @@ include "../includes/sidebar.php";
         <th>Paid</th>
         <th>Due</th>
         <th>Status</th>
-        <th>Pharmacist</th>
         <th>Date</th>
       </tr>
     </thead>
     <tbody>
       <?php
-        $result = $conn->query("SELECT * FROM purchases WHERE pharmacist_name = '$pharmacist_name'");
+        $result = $conn->query("SELECT * FROM purchases WHERE pharmacist_name = '$pharmacist_name' ORDER BY id DESC");
         if ($result && $result->num_rows > 0) {
           while ($row = $result->fetch_assoc()) {
             $statusClass = ($row['status'] === 'Paid') ? 'status-paid' : 'status-due';
@@ -113,7 +112,6 @@ include "../includes/sidebar.php";
               <td>{$row['paid_amount']}</td>
               <td>{$row['due']}</td>
               <td><span class='status-btn {$statusClass}'>{$statusText}</span></td>
-              <td>{$row['pharmacist_name']}</td>
               <td>{$row['purchase_date']}</td>
             </tr>";
           }

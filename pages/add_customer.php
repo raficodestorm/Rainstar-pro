@@ -20,8 +20,8 @@ if (isset($_POST['addcustomer'])) {
     $email = $_POST['email'];
     $addr  = $_POST['address'];
     
-    $customer = $conn->prepare("INSERT INTO customers(name, email, phone, address) VALUES(?, ?, ?, ?)");
-    $customer->bind_param("ssss", $name, $email, $phone, $addr);
+    $customer = $conn->prepare("INSERT INTO customers(name, email, phone, address, pharmacist_id) VALUES(?, ?, ?, ?, ?)");
+    $customer->bind_param("ssssi", $name, $email, $phone, $addr, $pharmacist_id);
 
     if ($customer->execute()) {
         $popup = true;

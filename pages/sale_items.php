@@ -54,8 +54,8 @@ include "../includes/sidebar.php";
 
     .stc-title{ text-align:center; color:#007bff; font-weight:bold; }
 
-    tr:hover td{ background:black; color:#ff4800; }
-    tr:hover{ border-left:4px solid #ff4800; }
+    tr:hover td{ background:black; color:#9ef01a; }
+    tr:hover{ border-left:4px solid #9ef01a; }
   </style>
 </head>
 <body>

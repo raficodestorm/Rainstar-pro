@@ -1,6 +1,7 @@
 <?php
 require_once "../includes/config.php"; 
 require_once "../includes/dbconnection.php"; 
+
 ?>
  <!-- partial:partials/_navbar.html -->
         <nav class="navbar p-0 fixed-top d-flex flex-row">
@@ -180,7 +181,7 @@ require_once "../includes/dbconnection.php";
                         </div>
                       </div>
                       <div class="preview-item-content">
-                        <p class="preview-subject mb-1"><a href="loginform.php">Log out</a></p>
+                        <p class="preview-subject mb-1">Log out</p>
                       </div>
                     </button>
                   </form>

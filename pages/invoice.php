@@ -32,6 +32,7 @@ $items = $conn->query("SELECT medicine, quantity, unit_price FROM sale_items WHE
         line-height: 1.4;
         color: #000;
     }
+    .rain{ font-size: 20px; }
     .center { text-align: center; }
     .bold { font-weight: bold; }
     .line { border-top: 1px dashed #000; margin: 5px 0; }
@@ -49,7 +50,7 @@ $items = $conn->query("SELECT medicine, quantity, unit_price FROM sale_items WHE
 </head>
 <body>
 
-<div class="center bold">RainStar Pharma</div>
+<div class="center bold rain">RainStar Pharma</div>
 <div class="center">Lalbag, Dhaka</div>
 <br>
 <div class="center bold">SALES RECEIPT</div>
@@ -57,7 +58,7 @@ $items = $conn->query("SELECT medicine, quantity, unit_price FROM sale_items WHE
 
 Invoice ID: BRP<?= $sale['id']; ?><br>
 Customer: <?= htmlspecialchars($sale['customer_name']); ?><br>
-Pharmacist: <?= htmlspecialchars($sale['pharmacist_name']); ?><br>
+Transaction by: <?= htmlspecialchars($sale['pharmacist_name']); ?><br>
 <table style="width:100%;">
     <tr>
         <td>Date: <?= date("d-m-Y", strtotime($sale['sale_date'])); ?></td>

@@ -33,8 +33,8 @@ CREATE TABLE supplier (
     email VARCHAR(100),
     address TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    added_by INT,
-    FOREIGN KEY (added_by) REFERENCES users(id)
+    pharmacist_id INT,
+    FOREIGN KEY (pharmacist_id) REFERENCES users(id)
 );
 
 -- 4. Medicine Type Table
@@ -66,8 +66,8 @@ CREATE TABLE customers (
     email VARCHAR(100),
     address TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    added_by INT,
-    FOREIGN KEY (added_by) REFERENCES users(id)
+    pharmacist_id INT,
+    FOREIGN KEY (pharmacist_id) REFERENCES users(id)
 );
 
 -- 7. Sales Table
@@ -104,6 +104,7 @@ CREATE TABLE sale_return_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     sale_id INT,
     stock_id INT,
+    medicine VARCHAR(100),
     quantity INT NOT NULL,
     unit_price DECIMAL(10,2) NOT NULL,
     reason TEXT,
@@ -182,8 +183,9 @@ CREATE TABLE expense (
     amount INT,
     purpose VARCHAR(50),
     description VARCHAR(200),
-    spent_by VARCHAR(100),
-    spent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    pharmacist_id INT,
+    spent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (pharmacist_id) REFERENCES users(id)
 );
 -- 16. expense Table 
 CREATE TABLE revenue (
@@ -201,6 +203,8 @@ INSERT INTO role (role_name) VALUES ('pharmacist');
 INSERT INTO users (fullname, username, email, phone, branch, password, role_name) VALUES ('Omar', 'omar', 'omar@gmail.com', 0124578552, 'Lalbag', '$2y$10$G1JB4OcEgr.reDNWP7ODUeWld2jl7QWTSPaVi4V26X8...', 'admin');
 INSERT INTO users (fullname, username, email, phone, branch, password, role_name) VALUES ('Faruk', 'faruk', 'faruk@gmail.com', 0124578652, 'Lalbag', '$2y$10$G1JB4OcEgr.reDNWP7ODUeWld2jl7QWTSPaVi4V26X8...', 'pharmacist');
 -- ------------------- Insert sample supplier---------------------------------------
+INSERT INTO customers (name, phone, address) VALUES ('Walk-in Customer', NULL, 'Different');
+
 INSERT INTO supplier (name, contact_person, phone, email, address) 
 VALUES 
 ('Square Pharmaceuticals Ltd.', 'Rasel Hossain', '01910192276', 'mdraselhossain2276@gmail.com', 'Shahidnagar, Lalbag, Dhaka'),

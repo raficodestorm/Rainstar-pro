@@ -1,9 +1,9 @@
 <?php
 require_once "../includes/config.php"; 
 require_once "../includes/dbconnection.php"; 
-
 include "../includes/header.php";
 include "../includes/sidebar.php";
+
 ?>
 <div class="container-fluid page-body-wrapper">
   <?php include "../includes/navbar.php"; ?>
@@ -12,21 +12,18 @@ include "../includes/sidebar.php";
     <div class="content-wrapper">
 <!-- contant area start----------------------------------------------------------------------------->
    <?php
-// include "../includes/dbconnection.php";
+$popup = false; // default no popup
 
-$popup = false; 
-if (isset($_POST['addsupplier'])) {
-    $name  = $_POST['name'];
-    $contact  = $_POST['contact'];
-    $phone = $_POST['phone'];
-    $email = $_POST['email'];
-    $addr  = $_POST['address'];
+if (isset($_POST['expense'])) {
+    $amount  = $_POST['expense_amount'];
+    $purpose = $_POST['purpose'];
+    $description = $_POST['description'];
 
-    $customer = $conn->prepare("INSERT INTO supplier(name, contact_person, phone, email, address, pharmacist_id) VALUES(?, ?, ?, ?, ?, ?)");
-    $customer->bind_param("ssssi", $name, $contact, $phone, $email, $addr, $pharmacist_id);
+    $customer = $conn->prepare("INSERT INTO expense(amount, purpose, description, pharmacist_id) VALUES(?, ?, ?, ?)");
+    $customer->bind_param("dssi", $amount, $purpose, $description, $pharmacist_id);
 
     if ($customer->execute()) {
-        $popup = true; 
+        $popup = true;
     } else {
         echo "<div style='color:red;'>Error: " . $customer->error . "</div>";
     }
@@ -37,7 +34,7 @@ if (isset($_POST['addsupplier'])) {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Add Supplier</title>
+  <title>Expense</title>
   <style>
     * {
       margin: 0;
@@ -147,37 +144,29 @@ if (isset($_POST['addsupplier'])) {
 </head>
 <body>
   <div class="form-container">
-    <h2>Add Supplier</h2>
-    <form id="addSupplierForm" method="POST">
+    <h2>Damage Entry</h2>
+    <form id="damage" method="POST">
       <div class="form-group">
-        <label for="supplier-name">Supplier Name</label>
-        <input type="text" id="supplier-name" name="name" required placeholder="Enter full name">
+        <label for="damage_item">Damage item:</label>
+        <input type="text" list="damage_list" id="damage_item" name="edamage_item" required placeholder="Enter amount">
+        <datalist id="damage-list">
+              <?php
+              $medicine_name = $conn->query("SELECT medicine_name FROM stock ORDER BY name ASC");
+              while ($s = $medicine_name->fetch_assoc()) {
+                  echo "<option value='".htmlspecialchars($s['medicine_name'])."'>";
+              }
+              ?>
+            </datalist>
       </div>
 
       <div class="form-group">
-        <label for="contact-person">Contact Person</label>
-        <input type="text" id="contact-person" name="contact" required placeholder="Enter full name">
+        <label for="description">Description:</label>
+        <input type="text" id="description" name="description" placeholder="description">
       </div>
 
-      <div class="form-group">
-        <label for="phone">Phone Number</label>
-        <input type="tel" id="phone" name="phone" required placeholder="Enter phone number">
-      </div>
-
-      <div class="form-group">
-        <label for="email">Email Address</label>
-        <input type="email" id="email" name="email" placeholder="Enter email address">
-      </div>
-
-      <div class="form-group">
-        <label for="address">Address</label>
-        <textarea id="address" name="address" rows="3" placeholder="Enter supplier address" required></textarea>
-      </div>
-
-      <button type="submit" class="submit-btn"  name="addsupplier">Add Supplier</button>
+      <button type="submit" class="submit-btn"  name="expense">Submit</button>
     </form>
   </div>
-
   <audio id="click">
   <source src="../images/success.mp3" type="audio/mpeg">
 </audio>
@@ -191,8 +180,8 @@ if (isset($_POST['addsupplier'])) {
 <?php if ($popup): ?>
   window.onload = function() {
     Swal.fire({
-      title: '🏆 Successful! 🏆',
-      text: 'Your supplier has been saved successfully.',
+      title: '🏆 Successful!🏆',
+      text: 'Your expense has been saved successfully.',
       icon: 'success',
       background: 'linear-gradient(135deg,#3a86ff 0%,#db00b6 100%)', 
       color: '#fff',
@@ -210,7 +199,6 @@ if (isset($_POST['addsupplier'])) {
         confirmButton: 'px-6 py-2 rounded-full shadow-lg'
       },
       didOpen: () => {
-        // 🎉 Start confetti when popup opens
         const duration = 2 * 1000; // 2 seconds
         const animationEnd = Date.now() + duration;
         (function frame() {
@@ -226,11 +214,12 @@ if (isset($_POST['addsupplier'])) {
         })();
       }
     }).then(() => {
-      document.getElementById("addSupplierForm").reset();
+      document.getElementById("expense").reset();
     });
   };
 <?php endif; ?>
 </script>
+
 </body>
 
 </html>

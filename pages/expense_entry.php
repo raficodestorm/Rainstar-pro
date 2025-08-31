@@ -19,8 +19,8 @@ if (isset($_POST['expense'])) {
     $purpose = $_POST['purpose'];
     $description = $_POST['description'];
 
-    $customer = $conn->prepare("INSERT INTO expense(amount, purpose, description, spent_by) VALUES(?, ?, ?, ?)");
-    $customer->bind_param("dsss", $amount, $purpose, $description, $pharmacist_name);
+    $customer = $conn->prepare("INSERT INTO expense(amount, purpose, description, pharmacist_id) VALUES(?, ?, ?, ?)");
+    $customer->bind_param("dssi", $amount, $purpose, $description, $pharmacist_id);
 
     if ($customer->execute()) {
         $popup = true;

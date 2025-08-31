@@ -59,8 +59,8 @@ if (isset($_GET['action'])) {
         $stmt->bind_param("ii", $sale_id, $pharmacist_id);
         $stmt->execute();
         $res = $stmt->get_result();
-        $ress = $stmt->get_result()->fetch_assoc();
-        $stk_id = $ress['stock_id'];
+        // $ress = $stmt->get_result()->fetch_assoc();
+        // $stk_id = $ress['stock_id'];
         $items = [];
         while ($row = $res->fetch_assoc()) {
             $items[] = $row;
@@ -89,10 +89,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sale_id      = intval($_POST['invoice_number'] ?? 0); // treating invoice as sale_id
     $customer_id  = intval($_POST['customer_id'] ?? 0);
     $reason       = trim($_POST['reason'] ?? '');
-    $stock_ids    = $stk_id;
-    $medicine     = htmlspecialchars($_POST['medicine']);
+    $stock_ids    = $_POST['stock_id'] ?? [];
     $qtys         = $_POST['quantity'] ?? [];
     $unit_prices  = $_POST['unit_price'] ?? []; // sale unit prices from UI
+
 
     if ($sale_id <= 0 || $customer_id <= 0 || $reason === '' || empty($stock_ids)) {
         $flash = ['type' => 'error', 'msg' => 'Please fill all required fields.'];
@@ -119,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Prepared statements
                 $ins_return = $conn->prepare("
-                    INSERT INTO sale_return_items (sale_id, stock_id, medicine, quantity, unit_price, reason, pharmacist_id)
+                    INSERT INTO sale_return_items (sale_id, stock_id, medicine,  quantity, unit_price, reason, pharmacist_id)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                 ");
                 $upd_stock = $conn->prepare("UPDATE stock SET quantity = quantity + ? WHERE id = ?");
@@ -150,9 +150,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($qty > $sold_qty_for_item) {
                         throw new Exception("Return quantity ($qty) exceeds sold quantity ($sold_qty_for_item).");
                     }
+                    // Get medicine name from stock
+                    $get_medicine = $conn->prepare("SELECT medicine_name FROM stock WHERE id=?");
+                    $get_medicine->bind_param("i", $stock_id);
+                    $get_medicine->execute();
+                    $med_row = $get_medicine->get_result()->fetch_assoc();
+                    $get_medicine->close();
 
+                    $medicine_name = $med_row['medicine_name'] ?? '';
                     // Insert into return_items (store sale unit price)
-                    $ins_return->bind_param("iiidsi", $sale_id, $stock_id, $medicine, $qty, $sale_price, $reason, $pharmacist_id);
+                    $ins_return->bind_param("iisidsi", $sale_id, $stock_id, $medicine_name, $qty, $sale_price, $reason, $pharmacist_id);
                     $ins_return->execute();
                     $return_id = $ins_return->insert_id;
                     $ins_return->close();
@@ -436,7 +443,7 @@ include "../includes/sidebar.php";
   // Build options from saleItems
   function buildMedicineOptions() {
     return saleItems.map(it =>
-      `<option value="${it.medicine}"
+      `<option value="${it.stock_id}"
                data-price="${it.sale_unit_price}"
                data-pp="${it.purchase_price}"
                data-max="${it.sold_qty}">
@@ -457,7 +464,7 @@ include "../includes/sidebar.php";
     row.innerHTML = `
       <div class="sreturn-form-group">
         <label>Medicine</label>
-        <select name="stock[]" required onchange="onMedicineChange(this)">
+        <select name="stock_id[]" required onchange="onMedicineChange(this)">
           <option value="" disabled selected>Select item</option>
           ${buildMedicineOptions()}
         </select>
