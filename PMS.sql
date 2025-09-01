@@ -113,6 +113,17 @@ CREATE TABLE sale_return_items (
     FOREIGN KEY (sale_id) REFERENCES sales(id),
     FOREIGN KEY (stock_id) REFERENCES stock(id)
 );
+-- 7. Sales Table
+CREATE TABLE sale_returns (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    sale_id INT,
+    customer_id INT,
+    pharmacist_id INT,
+    total_amount DECIMAL(10,2),
+    date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES customers(id),
+    FOREIGN KEY (pharmacist_id) REFERENCES users(id)
+);
 
 -- 10. Purchases Table
 CREATE TABLE purchases (

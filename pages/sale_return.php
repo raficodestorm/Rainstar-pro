@@ -119,8 +119,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Prepared statements
                 $ins_return = $conn->prepare("
-                    INSERT INTO sale_return_items (sale_id, stock_id, medicine,  quantity, unit_price, reason, pharmacist_id)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO sale_return_items (sale_id, stock_id, medicine,  quantity, unit_price, total, reason, pharmacist_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ");
                 $upd_stock = $conn->prepare("UPDATE stock SET quantity = quantity + ? WHERE id = ?");
                 $sel_si    = $conn->prepare("SELECT quantity, unit_price FROM sale_items WHERE sale_id=? AND stock_id=?");
@@ -131,63 +131,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $sel_stock_price = $conn->prepare("SELECT purchase_price FROM stock WHERE id=?");
 
                 foreach ($stock_ids as $i => $stock_id_raw) {
-                    $stock_id   = intval($stock_id_raw);
-                    $qty        = max(0, intval($qtys[$i] ?? 0));
-                    $sale_price = floatval($unit_prices[$i] ?? 0);
-
-                    if ($stock_id <= 0 || $qty <= 0 || $sale_price < 0) {
-                        continue; // skip invalid rows
-                    }
-
-                    // Ensure not returning more than sold for this item
-                    $sel_si->bind_param("ii", $sale_id, $stock_id);
-                    $sel_si->execute();
-                    $si_row = $sel_si->get_result()->fetch_assoc();
-                    if (!$si_row) {
-                        throw new Exception("Item (stock_id=$stock_id) not found in this sale.");
-                    }
-                    $sold_qty_for_item = intval($si_row['quantity']);
-                    if ($qty > $sold_qty_for_item) {
-                        throw new Exception("Return quantity ($qty) exceeds sold quantity ($sold_qty_for_item).");
-                    }
-                    // Get medicine name from stock
-                    $get_medicine = $conn->prepare("SELECT medicine_name FROM stock WHERE id=?");
-                    $get_medicine->bind_param("i", $stock_id);
-                    $get_medicine->execute();
-                    $med_row = $get_medicine->get_result()->fetch_assoc();
-                    $get_medicine->close();
-
-                    $medicine_name = $med_row['medicine_name'] ?? '';
-                    // Insert into return_items (store sale unit price)
-                    $ins_return->bind_param("iisidsi", $sale_id, $stock_id, $medicine_name, $qty, $sale_price, $reason, $pharmacist_id);
-                    $ins_return->execute();
-                    $return_id = $ins_return->insert_id;
-                    $ins_return->close();
-
-                    // Add quantity back to stock
-                    $upd_stock->bind_param("ii", $qty, $stock_id);
-                    $upd_stock->execute();
-
-                    // Reduce sale_items qty or delete if zero
-                    if ($qty === $sold_qty_for_item) {
-                        $del_si->bind_param("ii", $sale_id, $stock_id);
-                        $del_si->execute();
-                    } else {
-                        $upd_si->bind_param("iii", $qty, $sale_id, $stock_id);
-                        $upd_si->execute();
-                    }
-
-                    // Refund and profit delta
-                    $line_refund = $qty * $sale_price;
-                    $total_refund += $line_refund;
-
-                    // Purchase price (for profit deduction)
-                    $sel_stock_price->bind_param("i", $stock_id);
-                    $sel_stock_price->execute();
-                    $pp_row = $sel_stock_price->get_result()->fetch_assoc();
-                    $purchase_price = floatval($pp_row['purchase_price'] ?? 0);
-                    $profit_deduction += $qty * ($sale_price - $purchase_price);
-                }
+                  $stock_id   = intval($stock_id_raw);
+                  $qty        = max(0, intval($qtys[$i] ?? 0));
+                  $sale_price = floatval($unit_prices[$i] ?? 0);
+                  $total      = $qty*$sale_price;
+              
+                  if ($stock_id <= 0 || $qty <= 0 || $sale_price < 0) {
+                      continue;
+                  }
+              
+                  // Ensure not returning more than sold for this item
+                  $sel_si->bind_param("ii", $sale_id, $stock_id);
+                  $sel_si->execute();
+                  $si_row = $sel_si->get_result()->fetch_assoc();
+                  if (!$si_row) {
+                      throw new Exception("Item (stock_id=$stock_id) not found in this sale.");
+                  }
+                  $sold_qty_for_item = intval($si_row['quantity']);
+                  if ($qty > $sold_qty_for_item) {
+                      throw new Exception("Return quantity ($qty) exceeds sold quantity ($sold_qty_for_item).");
+                  }
+              
+                  // Get medicine name
+                  $get_medicine = $conn->prepare("SELECT medicine_name FROM stock WHERE id=?");
+                  $get_medicine->bind_param("i", $stock_id);
+                  $get_medicine->execute();
+                  $med_row = $get_medicine->get_result()->fetch_assoc();
+                  $get_medicine->close();
+              
+                  $medicine_name = $med_row['medicine_name'] ?? '';
+              
+                  // Insert into return_items
+                  $ins_return->bind_param(
+                      "iisiddsi",
+                      $sale_id, $stock_id, $medicine_name, $qty, $sale_price, $total, $reason, $pharmacist_id
+                  );
+                  $ins_return->execute();
+                  $return_id = $ins_return->insert_id;
+              
+                  // Add quantity back to stock
+                  $upd_stock->bind_param("ii", $qty, $stock_id);
+                  $upd_stock->execute();
+              
+                  // Reduce sale_items qty or delete if zero
+                  if ($qty === $sold_qty_for_item) {
+                      $del_si->bind_param("ii", $sale_id, $stock_id);
+                      $del_si->execute();
+                  } else {
+                      $upd_si->bind_param("iii", $qty, $sale_id, $stock_id);
+                      $upd_si->execute();
+                  }
+              
+                  // Refund & profit
+                  $line_refund = $qty * $sale_price;
+                  $total_refund += $line_refund;
+              
+                  $sel_stock_price->bind_param("i", $stock_id);
+                  $sel_stock_price->execute();
+                  $pp_row = $sel_stock_price->get_result()->fetch_assoc();
+                  $purchase_price = floatval($pp_row['purchase_price'] ?? 0);
+                  $profit_deduction += $qty * ($sale_price - $purchase_price);
+              }
+              
+              // ✅ Now close prepared statements after loop
+              $ins_return->close();
+              $upd_stock->close();
+              $sel_si->close();
+              $upd_si->close();
+              $del_si->close();
+              $sel_stock_price->close();
+              
 
                 // Update sales totals (subtract totals safely)
                 $new_total_amount = max(0, floatval($sale_res['total_amount']) - $total_refund);
@@ -232,7 +245,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Commit
                 $conn->commit();
-                header("Location: sale_return_invoice.php?return_id=" . $return_id);
+                header("Location: sale_return_invoice.php?return_id=" . $sale_id);
             } catch (Throwable $e) {
                 $conn->rollback();
                 $flash = ['type' => 'error', 'msg' => 'Failed to record return: ' . $e->getMessage()];

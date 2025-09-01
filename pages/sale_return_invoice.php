@@ -115,7 +115,7 @@ Reason: <?= htmlspecialchars($return[0]['reason']); ?><br>
                     ----------S A Rafi 01877100096---------</div>
 <br>
 <div class="btn">
-    <button class="reset-btn" onclick="window.location.href = 'sale_return_form.php'">➕ New Return</button>
+    <button class="reset-btn" onclick="window.location.href = 'sale_return.php'">➕ New Return</button>
     <button class="print-btn" onclick="window.print()">🖨 Print Invoice</button>
 </div>
 
