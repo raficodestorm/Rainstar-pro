@@ -117,11 +117,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $total_refund   = 0.0;
                 $profit_deduction = 0.0;
 
+                $insert_return = $conn->prepare("INSERT INTO sale_returns (sale_id, customer_id, pharmacist_id, total_amount) VALUES (?, ?, ?, ?)");
+                  $insert_return->bind_param("iiid", $sale_id, $customer_id, $pharmacist_id, $total_refund);
+                  $insert_return->execute();
+                  $return_id = $insert_return->insert_id;
+                  $insert_return->close();
                 // Prepared statements
                 $ins_return = $conn->prepare("
-                    INSERT INTO sale_return_items (sale_id, stock_id, medicine,  quantity, unit_price, total, reason, pharmacist_id)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO sale_return_items (return_id, stock_id, medicine,  quantity, unit_price, reason, pharmacist_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                 ");
+                
                 $upd_stock = $conn->prepare("UPDATE stock SET quantity = quantity + ? WHERE id = ?");
                 $sel_si    = $conn->prepare("SELECT quantity, unit_price FROM sale_items WHERE sale_id=? AND stock_id=?");
                 $upd_si    = $conn->prepare("UPDATE sale_items SET quantity = quantity - ? WHERE sale_id=? AND stock_id=?");
@@ -134,7 +140,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   $stock_id   = intval($stock_id_raw);
                   $qty        = max(0, intval($qtys[$i] ?? 0));
                   $sale_price = floatval($unit_prices[$i] ?? 0);
-                  $total      = $qty*$sale_price;
+                  // Refund & profit
+                  $line_refund = $qty * $sale_price;
+                  $total_refund += $line_refund;
               
                   if ($stock_id <= 0 || $qty <= 0 || $sale_price < 0) {
                       continue;
@@ -162,13 +170,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   $medicine_name = $med_row['medicine_name'] ?? '';
               
                   // Insert into return_items
-                  $ins_return->bind_param(
-                      "iisiddsi",
-                      $sale_id, $stock_id, $medicine_name, $qty, $sale_price, $total, $reason, $pharmacist_id
-                  );
+                  $ins_return->bind_param( "iisidsi", $return_id, $stock_id, $medicine_name, $qty, $sale_price,  $reason, $pharmacist_id );
                   $ins_return->execute();
-                  $return_id = $ins_return->insert_id;
-              
+                  
                   // Add quantity back to stock
                   $upd_stock->bind_param("ii", $qty, $stock_id);
                   $upd_stock->execute();
@@ -182,9 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                       $upd_si->execute();
                   }
               
-                  // Refund & profit
-                  $line_refund = $qty * $sale_price;
-                  $total_refund += $line_refund;
+                  
               
                   $sel_stock_price->bind_param("i", $stock_id);
                   $sel_stock_price->execute();
@@ -192,14 +194,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   $purchase_price = floatval($pp_row['purchase_price'] ?? 0);
                   $profit_deduction += $qty * ($sale_price - $purchase_price);
               }
-              
-              // ✅ Now close prepared statements after loop
               $ins_return->close();
               $upd_stock->close();
               $sel_si->close();
               $upd_si->close();
               $del_si->close();
               $sel_stock_price->close();
+
+              
+              
               
 
                 // Update sales totals (subtract totals safely)
@@ -245,7 +248,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Commit
                 $conn->commit();
-                header("Location: sale_return_invoice.php?return_id=" . $sale_id);
+                header("Location: sale_return_invoice.php?return_id=" . $return_id);
             } catch (Throwable $e) {
                 $conn->rollback();
                 $flash = ['type' => 'error', 'msg' => 'Failed to record return: ' . $e->getMessage()];

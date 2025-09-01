@@ -88,7 +88,6 @@ include "../includes/sidebar.php";
       <tr>
         <th>ID</th>
         <th>Customer ID</th>
-        <th>Pharmacist ID</th>
         <th>Subtotal</th>
         <th>Discount</th>
         <th>Net Total</th>
@@ -109,7 +108,6 @@ include "../includes/sidebar.php";
             echo "<tr>
               <td>{$row['id']}</td>
               <td>{$row['customer_id']}</td>
-              <td>{$row['pharmacist_id']}</td>
               <td>{$row['total_amount']}</td>
               <td>{$row['discount']}</td>
               <td>{$row['net_total']}</td>

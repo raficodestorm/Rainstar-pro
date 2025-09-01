@@ -53,7 +53,7 @@ if ($purchases_result && $row = $purchases_result->fetch_assoc()) {
 $expense = "
     SELECT SUM(amount) as today_expense
     FROM expense
-    WHERE pharmacist_id = '$pharmacist_name' 
+    WHERE pharmacist_id = '$pharmacist_id' 
       AND DATE(spent_at) = CURDATE()
 ";
 

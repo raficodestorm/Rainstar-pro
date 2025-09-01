@@ -9,28 +9,40 @@ if (!isset($_GET['return_id'])) {
 $return_id = intval($_GET['return_id']);
 
 // Fetch return info with related sale and customer
+
 $return = $conn->query("
-    SELECT sri.id AS return_id, sri.sale_id, sri.reason, sri.pharmacist_id, sri.unit_price, sri.medicine AS medicine, sri.quantity,
-           s.sale_date, c.name AS customer_name, p.username AS pharmacist_name
-    FROM sale_return_items sri
-    JOIN sales s ON sri.sale_id = s.id
-    JOIN customers c ON s.customer_id = c.id
-    JOIN users p ON sri.pharmacist_id = p.id
-    WHERE sri.pharmacist_id = $pharmacist_id
-    AND sri.id = $return_id
+    SELECT sri.id AS return_item_id,
+       sr.id AS return_id,
+       sr.sale_id,
+       sr.date,
+       sri.reason,
+       sri.pharmacist_id,
+       sri.unit_price,
+       sri.medicine,
+       sri.quantity,
+       s.sale_date,
+       c.name AS customer_name,
+       p.username AS pharmacist_name
+FROM sale_return_items sri
+JOIN sale_returns sr ON sr.id = $return_id AND sr.id = sri.return_id
+JOIN sales s ON sr.sale_id = s.id
+JOIN customers c ON s.customer_id = c.id
+JOIN users p ON sri.pharmacist_id = p.id
+WHERE sri.pharmacist_id = $pharmacist_id
+AND sr.pharmacist_id = $pharmacist_id
 ")->fetch_all(MYSQLI_ASSOC);
 
 if (!$return) {
     die("Sale return not found.");
 }
 
-// Aggregate total refund
-$total_refund = 0;
-$medicine = null;
-foreach($return as $row) {
-    $total_refund += $row['quantity'] * $row['unit_price'];
-    $medicine =  $row['medicine'];
-}
+// // Aggregate total refund
+// $total_refund = 0;
+// $medicine = null;
+// foreach($return as $row) {
+//     $total_refund += $row['quantity'] * $row['unit_price'];
+//     $medicine =  $row['medicine'];
+// }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -71,8 +83,8 @@ Customer: <?= htmlspecialchars($return[0]['customer_name']); ?><br>
 Transaction by: <?= htmlspecialchars($return[0]['pharmacist_name']); ?><br>
 <table style="width:100%;">
     <tr>
-        <td>Date: <?= date("d-m-Y", strtotime($return[0]['sale_date'])); ?></td>
-        <td class="right">Time: <?= date("h:i A", strtotime($return[0]['sale_date'])); ?></td>
+        <td>Date: <?= date("d-m-Y", strtotime($return[0]['date'])); ?></td>
+        <td class="right">Time: <?= date("h:i A", strtotime($return[0]['date'])); ?></td>
     </tr>
 </table>
 
@@ -87,17 +99,20 @@ Transaction by: <?= htmlspecialchars($return[0]['pharmacist_name']); ?><br>
 </tr>
 <?php
 $sl = 1;
+$total_refund = 0;
 foreach($return as $row):
     $total = $row['quantity'] * $row['unit_price'];
+    $total_refund += $total;
 ?>
 <tr>
     <td><?= $sl++; ?></td>
-    <td><?= htmlspecialchars($medicine); ?></td>
+    <td><?= htmlspecialchars($row['medicine']); ?></td> 
     <td class="right"><?= $row['quantity']; ?></td>
     <td class="right"><?= number_format($row['unit_price'],2); ?></td>
     <td class="right"><?= number_format($total,2); ?></td>
 </tr>
 <?php endforeach; ?>
+
 </table>
 <div class="line"></div>
 

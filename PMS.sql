@@ -98,22 +98,7 @@ CREATE TABLE sale_items (
     FOREIGN KEY (sale_id) REFERENCES sales(id),
     FOREIGN KEY (stock_id) REFERENCES stock(id)
 );
-
--- 9. Return Table (Customer returns after sale)
-CREATE TABLE sale_return_items (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    sale_id INT,
-    stock_id INT,
-    medicine VARCHAR(100),
-    quantity INT NOT NULL,
-    unit_price DECIMAL(10,2) NOT NULL,
-    reason TEXT,
-    return_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    pharmacist_id INT,
-    FOREIGN KEY (sale_id) REFERENCES sales(id),
-    FOREIGN KEY (stock_id) REFERENCES stock(id)
-);
--- 7. Sales Table
+-- 9. Sales Table
 CREATE TABLE sale_returns (
     id INT AUTO_INCREMENT PRIMARY KEY,
     sale_id INT,
@@ -123,6 +108,21 @@ CREATE TABLE sale_returns (
     date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (customer_id) REFERENCES customers(id),
     FOREIGN KEY (pharmacist_id) REFERENCES users(id)
+);
+
+-- 10. Return Table (Customer returns after sale)
+CREATE TABLE sale_return_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    return_id INT,
+    stock_id INT,
+    medicine VARCHAR(100),
+    quantity INT NOT NULL,
+    unit_price DECIMAL(10,2) NOT NULL,
+    reason TEXT,
+    return_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    pharmacist_id INT,
+    FOREIGN KEY (return_id) REFERENCES sale_returns(id),
+    FOREIGN KEY (stock_id) REFERENCES stock(id)
 );
 
 -- 10. Purchases Table
@@ -173,6 +173,7 @@ CREATE TABLE expired_medicine (
     id INT AUTO_INCREMENT PRIMARY KEY,
     stock_id INT,
     expiry_date DATE,
+    pharmacist_id INT,
     noted_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (stock_id) REFERENCES stock(id)
 );
@@ -184,6 +185,7 @@ CREATE TABLE damage (
     medicine VARCHAR(100),
     quantity INT,
     unit_price INT,
+    pharmacist_id INT,
     noted_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (stock_id) REFERENCES stock(id)
 ); 

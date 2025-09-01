@@ -70,7 +70,6 @@ include "../includes/sidebar.php";
         <th>Amount</th>
         <th>Purpose</th>
         <th>Description</th>
-        <th>Spent by</th>
         <th>date</th>
         
       </tr>
@@ -85,7 +84,6 @@ include "../includes/sidebar.php";
               <td>{$row['amount']}</td>
               <td>{$row['purpose']}</td>
               <td>{$row['description']}</td>
-              <td>{$row['spent_by']}</td>
               <td>{$row['spent_at']}</td>
               
             </tr>";

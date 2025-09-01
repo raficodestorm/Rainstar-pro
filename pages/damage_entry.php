@@ -1,4 +1,5 @@
 <?php
+
 require_once "../includes/config.php"; 
 require_once "../includes/dbconnection.php"; 
 include "../includes/header.php";
@@ -12,22 +13,56 @@ include "../includes/sidebar.php";
     <div class="content-wrapper">
 <!-- contant area start----------------------------------------------------------------------------->
    <?php
+if (isset($_GET['damage_item'])) {
+    $medicine = $_GET['damage_items'];
+
+    $sql = $conn->prepare("SELECT id, purchase_price, quantity FROM stock WHERE medicine_name=? LIMIT 1");
+    $sql->bind_param("s", $medicine);
+    $sql->execute();
+    $result = $sql->get_result()->fetch_assoc();
+
+    header('Content-Type: application/json');
+    echo json_encode($result);
+    exit; // 🔴 very important so the rest of HTML does not echo
+}
+
 $popup = false; // default no popup
 
-if (isset($_POST['expense'])) {
-    $amount  = $_POST['expense_amount'];
-    $purpose = $_POST['purpose'];
+if (isset($_POST['damage'])) {
+    $medicine = $_POST['damage_item'];
+    $quantity = intval($_POST['quantity']);
+    $unit_price = floatval($_POST['unit_price']);
     $description = $_POST['description'];
+    $pharmacist_id = $_SESSION['user_id']; // assuming login system
 
-    $customer = $conn->prepare("INSERT INTO expense(amount, purpose, description, pharmacist_id) VALUES(?, ?, ?, ?)");
-    $customer->bind_param("dssi", $amount, $purpose, $description, $pharmacist_id);
+    // get stock id & available qty
+    $stock = $conn->prepare("SELECT id, quantity FROM stock WHERE medicine_name=? LIMIT 1");
+    $stock->bind_param("s", $medicine);
+    $stock->execute();
+    $stockData = $stock->get_result()->fetch_assoc();
 
-    if ($customer->execute()) {
-        $popup = true;
+    if ($stockData && $stockData['quantity'] >= $quantity) {
+        $stock_id = $stockData['id'];
+
+        // insert into damage
+        $insert = $conn->prepare("INSERT INTO damage(stock_id, medicine, quantity, unit_price, pharmacist_id) VALUES(?, ?, ?, ?, ?)");
+        $insert->bind_param("isidi", $stock_id, $medicine, $quantity, $unit_price, $pharmacist_id);
+
+        if ($insert->execute()) {
+            // deduct from stock
+            $update = $conn->prepare("UPDATE stock SET quantity = quantity - ? WHERE id=?");
+            $update->bind_param("ii", $quantity, $stock_id);
+            $update->execute();
+
+            $popup = true;
+        } else {
+            echo "<div style='color:red;'>Error: " . $insert->error . "</div>";
+        }
     } else {
-        echo "<div style='color:red;'>Error: " . $customer->error . "</div>";
+        echo "<div style='color:red;'>Error: Not enough stock available!</div>";
     }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -145,36 +180,58 @@ if (isset($_POST['expense'])) {
 <body>
   <div class="form-container">
     <h2>Damage Entry</h2>
-    <form id="damage" method="POST">
-      <div class="form-group">
-        <label for="damage_item">Damage item:</label>
-        <input type="text" list="damage_list" id="damage_item" name="edamage_item" required placeholder="Enter amount">
-        <datalist id="damage-list">
-              <?php
-              $medicine_name = $conn->query("SELECT medicine_name FROM stock ORDER BY name ASC");
-              while ($s = $medicine_name->fetch_assoc()) {
-                  echo "<option value='".htmlspecialchars($s['medicine_name'])."'>";
-              }
-              ?>
-            </datalist>
-      </div>
-
-      <div class="form-group">
-        <label for="description">Description:</label>
-        <input type="text" id="description" name="description" placeholder="description">
-      </div>
-
-      <button type="submit" class="submit-btn"  name="expense">Submit</button>
-    </form>
+    <form id="damageForm" method="POST">
+  <div class="form-group">
+    <label for="damage_item">Damage item:</label>
+    <input type="text" list="damage_list" id="damage_item" name="damage_item" required placeholder="Enter product name">
+    <datalist id="damage_list">
+        <?php
+        $medicine_name = $conn->query("SELECT id, medicine_name FROM stock ORDER BY medicine_name ASC");
+        while ($s = $medicine_name->fetch_assoc()) {
+            echo "<option value='".htmlspecialchars($s['medicine_name'])."' data-id='".$s['id']."'>";
+        }
+        ?>
+    </datalist>
   </div>
+
+  <div class="form-group">
+    <label for="quantity">Quantity:</label>
+    <input type="number" id="quantity" name="quantity" required placeholder="Enter quantity">
+  </div>
+
+  <div class="form-group">
+    <label for="unit_price">Unit Price:</label>
+    <input type="text" id="unit_price" name="unit_price" readonly>
+  </div>
+
+  <div class="form-group">
+    <label for="description">Description:</label>
+    <input type="text" id="description" name="description" placeholder="description">
+  </div>
+
+  <button type="submit" class="submit-btn" name="damage">Submit</button>
+</form>
+  </div>
+
   <audio id="click">
   <source src="../images/success.mp3" type="audio/mpeg">
 </audio>
-<?php if (!empty($popup)) : ?>
+
 <script>
-    document.getElementById('click').play();
+document.getElementById("damage_item").addEventListener("change", function() {
+    let medicine = this.value;
+    if (medicine) {
+        fetch("?medicine=" + encodeURIComponent(medicine))
+            .then(res => res.json())
+            .then(data => {
+                if (data) {
+                    document.getElementById("unit_price").value = data.purchase_price;
+                    document.getElementById("quantity").setAttribute("max", data.quantity);
+                }
+            });
+    }
+});
 </script>
-<?php endif; ?>
 
   <script>
 <?php if ($popup): ?>
@@ -219,7 +276,11 @@ if (isset($_POST['expense'])) {
   };
 <?php endif; ?>
 </script>
-
+<?php if (!empty($popup)) : ?>
+<script>
+    document.getElementById('click').play();
+</script>
+<?php endif; ?>
 </body>
 
 </html>

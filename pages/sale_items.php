@@ -72,7 +72,6 @@ include "../includes/sidebar.php";
         <th>Medicine</th>
         <th>Quantity</th>
         <th>Unit Price</th>
-        <th>pharmacist id</th>
       </tr>
     </thead>
     <tbody>
@@ -87,7 +86,6 @@ include "../includes/sidebar.php";
               <td>{$row['medicine']}</td>
               <td>{$row['quantity']}</td>
               <td>{$row['unit_price']}</td>
-              <td>{$row['pharmacist_id']}</td>
             </tr>";
           }
         } else {
