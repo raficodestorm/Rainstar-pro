@@ -1,292 +1,242 @@
 <?php
+require_once "../includes/config.php";
+require_once "../includes/dbconnection.php";
 
-require_once "../includes/config.php"; 
-require_once "../includes/dbconnection.php"; 
+// ---------- AJAX: return purchase_price & quantity for a medicine ----------
+if (isset($_GET['medicine'])) {
+    $medicine = trim((string)$_GET['medicine']);
+
+    $stmt = $conn->prepare(
+        "SELECT id, quantity, purchase_price
+         FROM stock
+         WHERE medicine_name = ? AND pharmacist_id = ?
+         ORDER BY expiry_date ASC
+         LIMIT 1"
+    );
+    $stmt->bind_param("si", $medicine, $pharmacist_id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $stockData = $res ? $res->fetch_assoc() : null;
+
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($stockData ?: (object)[]);
+    exit; // stop further HTML output for AJAX
+}
+
+// ---------- POST: handle damage form submit ----------
+$popup = false;
+$error = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['damage'])) {
+    $medicine = trim($_POST['damage_item'] ?? '');
+    $quantity = (int)($_POST['quantity'] ?? 0);
+    $description = trim($_POST['description'] ?? '');
+
+    if ($medicine === '' || $quantity <= 0) {
+        $error = 'Please select a product and enter a valid quantity.';
+    } else {
+        // fetch authoritative stock row
+        $stmt = $conn->prepare(
+            "SELECT id, quantity, purchase_price
+             FROM stock
+             WHERE medicine_name = ? AND pharmacist_id = ?
+             ORDER BY expiry_date ASC
+             LIMIT 1"
+        );
+        $stmt->bind_param("si", $medicine, $pharmacist_id);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $stockData = $res ? $res->fetch_assoc() : null;
+
+        if (!$stockData) {
+            $error = 'Item not found in your stock.';
+        } elseif ((int)$stockData['quantity'] < $quantity) {
+            $error = 'Not enough stock available. In hand: ' . (int)$stockData['quantity'];
+        } else {
+            // transaction: insert damage record + decrement stock
+            $conn->begin_transaction();
+            try {
+                $stock_id = (int)$stockData['id'];
+                $unit_price = (float)$stockData['purchase_price'];
+
+                // Insert into damage (ensure your damage table has these columns)
+                $insert = $conn->prepare(
+                    "INSERT INTO damage
+                     (stock_id, medicine, quantity, unit_price, description, pharmacist_id)
+                     VALUES (?, ?, ?, ?, ?, ?)"
+                );
+                $insert->bind_param("isidis", $stock_id, $medicine, $quantity, $unit_price, $description, $pharmacist_id);
+                $insert->execute();
+
+                // Deduct from stock
+                $update = $conn->prepare("UPDATE stock SET quantity = quantity - ? WHERE id = ?");
+                $update->bind_param("ii", $quantity, $stock_id);
+                $update->execute();
+
+                $conn->commit();
+                $popup = true;
+            } catch (Throwable $e) {
+                $conn->rollback();
+                $error = 'Failed to save damage: ' . $e->getMessage();
+            }
+        }
+    }
+}
+
+// Now include layout/header (safe because AJAX branch already exited)
 include "../includes/header.php";
 include "../includes/sidebar.php";
-
 ?>
+
 <div class="container-fluid page-body-wrapper">
   <?php include "../includes/navbar.php"; ?>
 
   <div class="main-panel">
     <div class="content-wrapper">
-<!-- contant area start----------------------------------------------------------------------------->
-   <?php
-if (isset($_GET['damage_item'])) {
-    $medicine = $_GET['damage_items'];
+      <!-- content area start -->
 
-    $sql = $conn->prepare("SELECT id, purchase_price, quantity FROM stock WHERE medicine_name=? LIMIT 1");
-    $sql->bind_param("s", $medicine);
-    $sql->execute();
-    $result = $sql->get_result()->fetch_assoc();
+      <style>
+        /* trimmed down styles from your original */
+        body { font-family: 'Segoe UI',sans-serif; background: linear-gradient(135deg,#0f0f0f,#1a1a1a); color:#e0e0e0; }
+        .form-container { background:#12151e; border-radius:14px; padding:30px 40px; max-width:700px; margin:20px auto; border:1px solid rgba(255,255,255,.05); box-shadow:0 8px 30px rgba(0,0,0,.6); }
+        h2 { text-align:center; margin-bottom:20px; color:#fff; }
+        .form-group { display:flex; flex-direction:column; margin-bottom:16px; }
+        label { margin-bottom:8px; color:#bdbdbd; font-weight:600; }
+        input { padding:10px 12px; border-radius:8px; border:1px solid #333; background:rgba(40,40,40,.9); color:#fff; }
+        .submit-btn { background:linear-gradient(135deg,#4dabf7,#1c7ed6); color:#fff; padding:12px; border:none; border-radius:10px; font-weight:600; cursor:pointer; width:100%;}
+        .error { background:#3a0b0b; color:#ffb4b4; padding:10px; border-radius:8px; margin-bottom:12px; border:1px solid #5c1f24; }
+        .small { font-size:13px; color:#cfcfcf; }
+      </style>
 
-    header('Content-Type: application/json');
-    echo json_encode($result);
-    exit; // 🔴 very important so the rest of HTML does not echo
-}
+      <div class="form-container">
+        <h2>Damage Entry</h2>
 
-$popup = false; // default no popup
+        <?php if ($error): ?>
+          <div class="error"><?= htmlspecialchars($error) ?></div>
+        <?php endif; ?>
 
-if (isset($_POST['damage'])) {
-    $medicine = $_POST['damage_item'];
-    $quantity = intval($_POST['quantity']);
-    $unit_price = floatval($_POST['unit_price']);
-    $description = $_POST['description'];
-    $pharmacist_id = $_SESSION['user_id']; // assuming login system
+        <form id="damageForm" method="POST" novalidate>
+          <div class="form-group">
+            <label for="damage_item">Damage item</label>
+            <input type="text" list="damage_list" id="damage_item" name="damage_item" required placeholder="Enter product name" autocomplete="off">
+            <datalist id="damage_list">
+              <?php
+              // Datalist: only this pharmacist's in-stock medicines (quantity > 0)
+              $dl = $conn->prepare("SELECT DISTINCT medicine_name FROM stock WHERE pharmacist_id = ? AND quantity > 0 ORDER BY medicine_name ASC");
+              $dl->bind_param("i", $pharmacist_id);
+              $dl->execute();
+              $rs = $dl->get_result();
+              while ($r = $rs->fetch_assoc()) {
+                  echo "<option value=\"" . htmlspecialchars($r['medicine_name']) . "\"></option>";
+              }
+              ?>
+            </datalist>
+            <div class="small">Select a name from the list (only your in-stock items shown).</div>
+          </div>
 
-    // get stock id & available qty
-    $stock = $conn->prepare("SELECT id, quantity FROM stock WHERE medicine_name=? LIMIT 1");
-    $stock->bind_param("s", $medicine);
-    $stock->execute();
-    $stockData = $stock->get_result()->fetch_assoc();
+          <div class="form-group">
+            <label for="quantity">Quantity <span id="available_qty" class="small" style="margin-left:8px;color:#9ef01a;"></span></label>
+            <input type="number" id="quantity" name="quantity" required placeholder="Enter quantity" min="1">
+          </div>
 
-    if ($stockData && $stockData['quantity'] >= $quantity) {
-        $stock_id = $stockData['id'];
+          <div class="form-group">
+            <label for="unit_price">Unit Price (auto)</label>
+            <input type="text" id="unit_price" name="unit_price" readonly>
+          </div>
 
-        // insert into damage
-        $insert = $conn->prepare("INSERT INTO damage(stock_id, medicine, quantity, unit_price, pharmacist_id) VALUES(?, ?, ?, ?, ?)");
-        $insert->bind_param("isidi", $stock_id, $medicine, $quantity, $unit_price, $pharmacist_id);
+          <div class="form-group">
+            <label for="description">Description (optional)</label>
+            <input type="text" id="description" name="description" placeholder="e.g., broken seal / expired">
+          </div>
 
-        if ($insert->execute()) {
-            // deduct from stock
-            $update = $conn->prepare("UPDATE stock SET quantity = quantity - ? WHERE id=?");
-            $update->bind_param("ii", $quantity, $stock_id);
-            $update->execute();
+          <button type="submit" class="submit-btn" name="damage">Submit</button>
+        </form>
+      </div>
 
-            $popup = true;
-        } else {
-            echo "<div style='color:red;'>Error: " . $insert->error . "</div>";
-        }
-    } else {
-        echo "<div style='color:red;'>Error: Not enough stock available!</div>";
-    }
-}
+      <audio id="click"><source src="../images/success.mp3" type="audio/mpeg"></audio>
 
-?>
+      <!-- Libraries (only used for popup/confetti) -->
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+      <script src="https://cdn.jsdelivr.net/npm/canvas-confetti"></script>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Expense</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+      <script>
+        const damageInput = document.getElementById('damage_item');
+        const unitPriceInput = document.getElementById('unit_price');
+        const qtyInput = document.getElementById('quantity');
+        const availSpan = document.getElementById('available_qty');
 
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #0f0f0f, #1a1a1a);
-      color: #e0e0e0;
-    }
+        // Use 'input' so datalist selection triggers immediately
+        damageInput.addEventListener('input', () => {
+          const medicine = damageInput.value.trim();
+          unitPriceInput.value = '';
+          availSpan.textContent = '';
+          qtyInput.removeAttribute('max');
 
-    .form-container {
-      background: #12151e;
-      backdrop-filter: blur(12px);
-      border-radius: 14px;
-      padding: 30px 40px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
-      max-width: 700px;
-      margin: 20px auto;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
+          if (!medicine) return;
 
-    h2 {
-      text-align: center;
-      margin-bottom: 25px;
-      color: #ffffff;
-      font-size: 24px;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 20px;
-    }
-
-    label {
-      margin-bottom: 8px;
-      font-weight: 600;
-      color: #bdbdbd;
-      font-size: 14px;
-    }
-
-    input, textarea {
-      padding: 10px 14px;
-      border-radius: 8px;
-      border: 1px solid #333;
-      font-size: 15px;
-      background-color: rgba(40, 40, 40, 0.9);
-      color: #ffffff;
-      transition: all 0.3s ease;
-    }
-
-    input:focus, textarea:focus {
-      border-color: #4dabf7;
-      outline: none;
-      box-shadow: 0 0 8px rgba(77, 171, 247, 0.5);
-      background-color: rgba(50, 50, 50, 0.95);
-    }
-
-    .submit-btn {
-      background: linear-gradient(135deg, #4dabf7, #1c7ed6);
-      color: white;
-      padding: 12px 20px;
-      font-size: 16px;
-      font-weight: 600;
-      border: none;
-      border-radius: 10px;
-      width: 100%;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .submit-btn:hover {
-      background: linear-gradient(135deg, #74c0fc, #4dabf7);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(77, 171, 247, 0.4);
-    }
-
-    /* Responsive Design */
-    @media (max-width: 600px) {
-      .form-container {
-        padding: 10px;
-        margin: auto;
-      }
-
-      h2 {
-        font-size: 20px;
-      }
-
-      label {
-        font-size: 13px;
-      }
-
-      input, textarea {
-        font-size: 14px;
-        padding: 8px 12px;
-      }
-
-      .submit-btn {
-        font-size: 15px;
-        padding: 10px 16px;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="form-container">
-    <h2>Damage Entry</h2>
-    <form id="damageForm" method="POST">
-  <div class="form-group">
-    <label for="damage_item">Damage item:</label>
-    <input type="text" list="damage_list" id="damage_item" name="damage_item" required placeholder="Enter product name">
-    <datalist id="damage_list">
-        <?php
-        $medicine_name = $conn->query("SELECT id, medicine_name FROM stock ORDER BY medicine_name ASC");
-        while ($s = $medicine_name->fetch_assoc()) {
-            echo "<option value='".htmlspecialchars($s['medicine_name'])."' data-id='".$s['id']."'>";
-        }
-        ?>
-    </datalist>
-  </div>
-
-  <div class="form-group">
-    <label for="quantity">Quantity:</label>
-    <input type="number" id="quantity" name="quantity" required placeholder="Enter quantity">
-  </div>
-
-  <div class="form-group">
-    <label for="unit_price">Unit Price:</label>
-    <input type="text" id="unit_price" name="unit_price" readonly>
-  </div>
-
-  <div class="form-group">
-    <label for="description">Description:</label>
-    <input type="text" id="description" name="description" placeholder="description">
-  </div>
-
-  <button type="submit" class="submit-btn" name="damage">Submit</button>
-</form>
-  </div>
-
-  <audio id="click">
-  <source src="../images/success.mp3" type="audio/mpeg">
-</audio>
-
-<script>
-document.getElementById("damage_item").addEventListener("change", function() {
-    let medicine = this.value;
-    if (medicine) {
-        fetch("?medicine=" + encodeURIComponent(medicine))
-            .then(res => res.json())
+          fetch('?medicine=' + encodeURIComponent(medicine))
+            .then(r => r.json())
             .then(data => {
-                if (data) {
-                    document.getElementById("unit_price").value = data.purchase_price;
-                    document.getElementById("quantity").setAttribute("max", data.quantity);
-                }
+              if (!data || Object.keys(data).length === 0) {
+                unitPriceInput.value = '';
+                availSpan.textContent = 'Not found';
+                return;
+              }
+              unitPriceInput.value = (data.purchase_price !== undefined && data.purchase_price !== null) ? parseFloat(data.purchase_price).toFixed(2) : '';
+              if (data.quantity !== undefined && data.quantity !== null) {
+                qtyInput.setAttribute('max', data.quantity);
+                availSpan.textContent = 'In hand: ' + data.quantity;
+              } else {
+                availSpan.textContent = '';
+              }
+            })
+            .catch(err => {
+              console.error(err);
+              unitPriceInput.value = '';
+              availSpan.textContent = 'Error';
             });
-    }
-});
-</script>
+        });
 
-  <script>
-<?php if ($popup): ?>
-  window.onload = function() {
-    Swal.fire({
-      title: '🏆 Successful!🏆',
-      text: 'Your expense has been saved successfully.',
-      icon: 'success',
-      background: 'linear-gradient(135deg,#3a86ff 0%,#db00b6 100%)', 
-      color: '#fff',
-      confirmButtonText: 'Great!',
-      confirmButtonColor: '#072ac8',
-      showClass: {
-        popup: 'animate__animated animate__zoomIn'
-      },
-      hideClass: {
-        popup: 'animate__animated animate__zoomOut'
-      },
-      customClass: {
-        popup: 'rounded-3xl shadow-2xl p-6',
-        title: 'text-3xl font-bold',
-        confirmButton: 'px-6 py-2 rounded-full shadow-lg'
-      },
-      didOpen: () => {
-        const duration = 2 * 1000; // 2 seconds
-        const animationEnd = Date.now() + duration;
-        (function frame() {
-          confetti({
-            particleCount: 5,
-            startVelocity: 30,
-            spread: 360,
-            origin: { x: Math.random(), y: Math.random() - 0.2 }
-          });
-          if (Date.now() < animationEnd) {
-            requestAnimationFrame(frame);
+        // prevent entering more than max
+        qtyInput.addEventListener('input', () => {
+          const max = parseInt(qtyInput.getAttribute('max') || '0', 10);
+          if (max > 0 && qtyInput.value !== '' && parseInt(qtyInput.value, 10) > max) {
+            qtyInput.value = max;
           }
-        })();
-      }
-    }).then(() => {
-      document.getElementById("expense").reset();
-    });
-  };
-<?php endif; ?>
-</script>
-<?php if (!empty($popup)) : ?>
-<script>
-    document.getElementById('click').play();
-</script>
-<?php endif; ?>
-</body>
+        });
+      </script>
 
-</html>
-<!-- contant area end----------------------------------------------------------------------------->
-    </div> <!-- content-wrapper ends -->
+      <?php if ($popup): ?>
+        <script>
+          window.addEventListener('load', function () {
+            Swal.fire({
+              title: 'Successful!',
+              text: 'Damage record saved and stock updated.',
+              icon: 'success',
+              background: 'linear-gradient(135deg,#3a86ff 0%,#db00b6 100%)',
+              color: '#fff',
+              confirmButtonText: 'OK'
+            }).then(() => {
+              document.getElementById('damageForm').reset();
+            });
 
+            // confetti
+            const duration = 1500;
+            const end = Date.now() + duration;
+            (function frame() {
+              confetti({ particleCount: 6, startVelocity: 28, spread: 360, origin: { x: Math.random(), y: Math.random() - 0.2 } });
+              if (Date.now() < end) requestAnimationFrame(frame);
+            })();
+
+            // play audio if allowed
+            const a = document.getElementById('click');
+            if (a) a.play().catch(()=>{});
+          });
+        </script>
+      <?php endif; ?>
+
+      <!-- content area end -->
+    </div> <!-- content-wrapper -->
     <?php include "../includes/footer.php"; ?>
-  </div> <!-- main-panel ends -->
-</div> <!-- page-body-wrapper ends -->
+  </div> <!-- main-panel -->
+</div> <!-- page-body-wrapper -->

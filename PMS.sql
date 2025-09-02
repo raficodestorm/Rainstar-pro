@@ -185,6 +185,7 @@ CREATE TABLE damage (
     medicine VARCHAR(100),
     quantity INT,
     unit_price INT,
+    description VARCHAR(200),
     pharmacist_id INT,
     noted_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (stock_id) REFERENCES stock(id)
