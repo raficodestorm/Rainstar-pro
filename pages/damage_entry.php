@@ -68,6 +68,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['damage'])) {
                 $insert->bind_param("isidis", $stock_id, $medicine, $quantity, $unit_price, $description, $pharmacist_id);
                 $insert->execute();
 
+                $total = $quantity*$unit_price;
+                $uprev = $conn->prepare("UPDATE revenue SET amount = amount - ? WHERE pharmacist_id = ? AND DATE(date) = CURDATE()");
+                $uprev->bind_param("di", $total, $pharmacist_id);
+                $uprev->execute();
+
                 // Deduct from stock
                 $update = $conn->prepare("UPDATE stock SET quantity = quantity - ? WHERE id = ?");
                 $update->bind_param("ii", $quantity, $stock_id);
@@ -118,7 +123,7 @@ include "../includes/sidebar.php";
         <form id="damageForm" method="POST" novalidate>
           <div class="form-group">
             <label for="damage_item">Damage item</label>
-            <input type="text" list="damage_list" id="damage_item" name="damage_item" required placeholder="Enter product name" autocomplete="off">
+            <input type="text" list="damage_list" id="damage_item" name="damage_item" placeholder="Enter product name" required>
             <datalist id="damage_list">
               <?php
               // Datalist: only this pharmacist's in-stock medicines (quantity > 0)
@@ -149,15 +154,11 @@ include "../includes/sidebar.php";
             <input type="text" id="description" name="description" placeholder="e.g., broken seal / expired">
           </div>
 
-          <button type="submit" class="submit-btn" name="damage">Submit</button>
+          <button type="submit" id="damage_btn" class="submit-btn" name="damage">Submit</button>
         </form>
       </div>
 
       <audio id="click"><source src="../images/success.mp3" type="audio/mpeg"></audio>
-
-      <!-- Libraries (only used for popup/confetti) -->
-      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-      <script src="https://cdn.jsdelivr.net/npm/canvas-confetti"></script>
 
       <script>
         const damageInput = document.getElementById('damage_item');
@@ -206,34 +207,54 @@ include "../includes/sidebar.php";
         });
       </script>
 
-      <?php if ($popup): ?>
-        <script>
-          window.addEventListener('load', function () {
-            Swal.fire({
-              title: 'Successful!',
-              text: 'Damage record saved and stock updated.',
-              icon: 'success',
-              background: 'linear-gradient(135deg,#3a86ff 0%,#db00b6 100%)',
-              color: '#fff',
-              confirmButtonText: 'OK'
-            }).then(() => {
-              document.getElementById('damageForm').reset();
-            });
-
-            // confetti
-            const duration = 1500;
-            const end = Date.now() + duration;
-            (function frame() {
-              confetti({ particleCount: 6, startVelocity: 28, spread: 360, origin: { x: Math.random(), y: Math.random() - 0.2 } });
-              if (Date.now() < end) requestAnimationFrame(frame);
-            })();
-
-            // play audio if allowed
-            const a = document.getElementById('click');
-            if (a) a.play().catch(()=>{});
+      <script>
+<?php if ($popup): ?>
+  window.onload = function() {
+    Swal.fire({
+      title: '🏆 Successful!🏆',
+      text: 'Damage record saved and stock updated.',
+      icon: 'success',
+      background: 'linear-gradient(135deg,#3a86ff 0%,#db00b6 100%)', 
+      color: '#fff',
+      confirmButtonText: 'Great!',
+      confirmButtonColor: '#072ac8',
+      showClass: {
+        popup: 'animate__animated animate__zoomIn'
+      },
+      hideClass: {
+        popup: 'animate__animated animate__zoomOut'
+      },
+      customClass: {
+        popup: 'rounded-3xl shadow-2xl p-6',
+        title: 'text-3xl font-bold',
+        confirmButton: 'px-6 py-2 rounded-full shadow-lg'
+      },
+      didOpen: () => {
+        const duration = 2 * 1000; // 2 seconds
+        const animationEnd = Date.now() + duration;
+        (function frame() {
+          confetti({
+            particleCount: 5,
+            startVelocity: 30,
+            spread: 360,
+            origin: { x: Math.random(), y: Math.random() - 0.2 }
           });
-        </script>
-      <?php endif; ?>
+          if (Date.now() < animationEnd) {
+            requestAnimationFrame(frame);
+          }
+        })();
+      }
+    }).then(() => {
+      document.getElementById("damage_btn").reset();
+    });
+  };
+<?php endif; ?>
+</script>
+<?php if (!empty($popup)) : ?>
+<script>
+    document.getElementById('click').play();
+</script>
+<?php endif; ?>
 
       <!-- content area end -->
     </div> <!-- content-wrapper -->
